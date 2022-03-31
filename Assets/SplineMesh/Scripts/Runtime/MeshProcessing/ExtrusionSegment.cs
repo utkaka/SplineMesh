@@ -13,12 +13,23 @@ namespace SplineMesh {
         private bool isDirty = false;
 
         private MeshFilter mf;
-        private Mesh result;
 
         private bool useSpline = false;
         private CubicBezierCurve curve;
         private Spline spline;
         private float intervalStart, intervalEnd;
+        
+        private int[] _triangles;
+        private Vector3[] _vertices;
+        private Vector3[] _normals;
+        private Vector2[] _uv;
+        private Vector2[] _uv2;
+        private Vector2[] _uv3;
+        private Vector2[] _uv4;
+        private Vector2[] _uv5;
+        private Vector2[] _uv6;
+        private Vector2[] _uv7;
+        private Vector2[] _uv8;
 
         private List<Vertex> shapeVertices = new List<Vertex>();
         /// <summary>
@@ -78,6 +89,14 @@ namespace SplineMesh {
             if (mf.sharedMesh == null) {
                 mf.sharedMesh = new Mesh();
             }
+            var mesh = mf.sharedMesh;
+            _uv2 = mesh.uv2;
+            _uv3 = mesh.uv3;
+            _uv4 = mesh.uv4;
+            _uv5 = mesh.uv5;
+            _uv6 = mesh.uv6;
+            _uv7 = mesh.uv7;
+            _uv8 = mesh.uv8;
         }
 
         /// <summary>
@@ -142,7 +161,7 @@ namespace SplineMesh {
             var path = new List<CurveSample>();
             if (useSpline) {
                 // calculate path from spline interval
-                float d = intervalStart;
+                var d = intervalStart;
                 while (d < intervalEnd) {
                     path.Add(spline.GetSampleAtDistance(d));
                     d += sampleSpacing;
@@ -160,47 +179,57 @@ namespace SplineMesh {
             return path;
         }
 
-        public void Compute() {
-            List<CurveSample> path = GetPath();
+        private void Compute() {
+            var path = GetPath();
 
-            int vertsInShape = shapeVertices.Count;
-            int segmentCount = path.Count - 1;
+            var vertsInShape = shapeVertices.Count;
+            var segmentCount = path.Count - 1;
 
-            var triangleIndices = new List<int>(vertsInShape * 2 * segmentCount * 3);
-            var bentVertices = new List<MeshVertex>(vertsInShape * 2 * segmentCount * 3);
+            _triangles = new int[vertsInShape * segmentCount * 6];
+            _vertices = new Vector3[path.Count * vertsInShape];
+            _normals = new Vector3[_vertices.Length];
+            _uv = new Vector2[_vertices.Length];
 
-            foreach (var sample in path) {
-                foreach (Vertex v in shapeVertices) {
-                    bentVertices.Add(sample.GetBent(new MeshVertex(
+
+            for (var i = 0; i < path.Count; i++) {
+                var sample = path[i];
+                for (var j = 0; j < vertsInShape; j++) {
+                    var v = shapeVertices[j];
+                    var bent = sample.GetBent(new MeshVertex(
                         new Vector3(0, v.point.y, -v.point.x),
                         new Vector3(0, v.normal.y, -v.normal.x),
-                        new Vector2(v.uCoord, textureScale * (sample.distanceInCurve + textureOffset)))));
+                        new Vector2(v.uCoord, textureScale * (sample.distanceInCurve + textureOffset))));
+                    var vertexIndex = i * vertsInShape + j;
+                    _vertices[vertexIndex] = bent.position;
+                    _normals[vertexIndex] = bent.normal;
+                    _uv[vertexIndex] = bent.uv;
                 }
             }
+
             var index = 0;
-            for (int i = 0; i < segmentCount; i++) {
-                for (int j = 0; j < shapeVertices.Count; j++) {
-                    int offset = j == shapeVertices.Count - 1 ? -(shapeVertices.Count - 1) : 1;
-                    int a = index + shapeVertices.Count;
-                    int b = index;
-                    int c = index + offset;
-                    int d = index + offset + shapeVertices.Count;
-                    triangleIndices.Add(c);
-                    triangleIndices.Add(b);
-                    triangleIndices.Add(a);
-                    triangleIndices.Add(a);
-                    triangleIndices.Add(d);
-                    triangleIndices.Add(c);
+            var triangleIndex = 0;
+            for (var i = 0; i < segmentCount; i++) {
+                for (var j = 0; j < vertsInShape; j++) {
+                    var offset = j == vertsInShape - 1 ? -(vertsInShape - 1) : 1;
+                    var a = index + vertsInShape;
+                    var b = index;
+                    var c = index + offset;
+                    var d = index + offset + vertsInShape;
+                    _triangles[triangleIndex++] = c;
+                    _triangles[triangleIndex++] = b;
+                    _triangles[triangleIndex++] = a;
+                    _triangles[triangleIndex++] = a;
+                    _triangles[triangleIndex++] = d;
+                    _triangles[triangleIndex++] = c;
                     index++;
                 }
             }
 
             MeshUtility.Update(mf.sharedMesh,
-                mf.sharedMesh,
-                triangleIndices,
-                bentVertices.Select(b => b.position),
-                bentVertices.Select(b => b.normal),
-                bentVertices.Select(b => b.uv));
+                _triangles,
+                _vertices,
+                _normals,
+                _uv, _uv2, _uv3, _uv4, _uv5, _uv6, _uv7, _uv8);
             var mc = GetComponent<MeshCollider>();
             if(mc != null) {
                 mc.sharedMesh = mf.sharedMesh;

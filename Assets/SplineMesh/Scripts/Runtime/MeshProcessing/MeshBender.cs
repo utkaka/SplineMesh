@@ -16,13 +16,27 @@ namespace SplineMesh {
     [RequireComponent(typeof(MeshFilter))]
     [ExecuteInEditMode]
     public class MeshBender : MonoBehaviour {
-        private bool isDirty = false;
+        private bool isDirty;
+        private bool isSourceDirty;
         private Mesh result;
         private bool useSpline;
         private Spline spline;
         private float intervalStart, intervalEnd;
         private CubicBezierCurve curve;
         private Dictionary<float, CurveSample> sampleCache = new Dictionary<float, CurveSample>();
+        
+        private List<MeshVertex> _sourceVertices;
+        private int[] _triangles;
+        private Vector3[] _vertices;
+        private Vector3[] _normals;
+        private Vector2[] _uv;
+        private Vector2[] _uv2;
+        private Vector2[] _uv3;
+        private Vector2[] _uv4;
+        private Vector2[] _uv5;
+        private Vector2[] _uv6;
+        private Vector2[] _uv7;
+        private Vector2[] _uv8;
 
         private SourceMesh source;
         /// <summary>
@@ -32,11 +46,14 @@ namespace SplineMesh {
             get { return source; }
             set {
                 if (value == source) return;
+                _sourceVertices = value.Vertices;
+                isSourceDirty = true;
                 SetDirty();
                 source = value;
             }
         }
-        
+
+        private int _repetitionCount;
         private FillingMode mode = FillingMode.StretchToInterval;
         /// <summary>
         /// The scaling mode along the spline
@@ -141,6 +158,8 @@ namespace SplineMesh {
                     FillStretch();
                     break;
             }
+
+            isSourceDirty = false;
         }
 
         private void OnDestroy() {
@@ -172,18 +191,32 @@ namespace SplineMesh {
         }
 
         private void FillOnce() {
+            if (isSourceDirty) {
+                _triangles = source.Triangles;
+                _uv = source.Mesh.uv;
+                _uv2 = source.Mesh.uv2;
+                _uv3 = source.Mesh.uv3;
+                _uv4 = source.Mesh.uv4;
+                _uv5 = source.Mesh.uv5;
+                _uv6 = source.Mesh.uv6;
+                _uv7 = source.Mesh.uv7;
+                _uv8 = source.Mesh.uv8;
+                _vertices = new Vector3[_sourceVertices.Count];
+                _normals = new Vector3[_sourceVertices.Count];
+            }
+
             sampleCache.Clear();
-            var bentVertices = new List<MeshVertex>(source.Vertices.Count);
             // for each mesh vertex, we found its projection on the curve
-            foreach (var vert in source.Vertices) {
-                float distance = vert.position.x - source.MinX;
+            for (var i = 0; i < _sourceVertices.Count; i++) {
+                var vert = _sourceVertices[i];
+                var distance = vert.position.x - source.MinX;
                 CurveSample sample;
                 if (!sampleCache.TryGetValue(distance, out sample)) {
                     if (!useSpline) {
                         if (distance > curve.Length) distance = curve.Length;
                         sample = curve.GetSampleAtDistance(distance);
                     } else {
-                        float distOnSpline = intervalStart + distance;
+                        var distOnSpline = intervalStart + distance;
                         if (distOnSpline > spline.Length) {
                             if (spline.IsLoop) {
                                 while (distOnSpline > spline.Length) {
@@ -193,132 +226,171 @@ namespace SplineMesh {
                                 distOnSpline = spline.Length;
                             }
                         }
+
                         sample = spline.GetSampleAtDistance(distOnSpline);
                     }
+
                     sampleCache[distance] = sample;
                 }
-
-                bentVertices.Add(sample.GetBent(vert));
+                var bent = sample.GetBent(vert);
+                _vertices[i] = bent.position;
+                _normals[i] = bent.normal;
             }
 
             MeshUtility.Update(result,
-                source.Mesh,
-                source.Triangles,
-                bentVertices.Select(b => b.position),
-                bentVertices.Select(b => b.normal));
+                _triangles,
+                _vertices,
+                _normals,
+                _uv, _uv2, _uv3, _uv4, _uv5, _uv6, _uv7, _uv8);
         }
 
         private void FillRepeat() {
-            float intervalLength = useSpline?
+            var intervalLength = useSpline?
                 (intervalEnd == 0 ? spline.Length : intervalEnd) - intervalStart :
                 curve.Length;
-            int repetitionCount = Mathf.FloorToInt(intervalLength / source.Length);
+            var repetitionCount = Mathf.FloorToInt(intervalLength / source.Length);
 
-
-            // building triangles and UVs for the repeated mesh
-            var triangles = new List<int>();
-            var uv = new List<Vector2>();
-            var uv2 = new List<Vector2>();
-            var uv3 = new List<Vector2>();
-            var uv4 = new List<Vector2>();
-            var uv5 = new List<Vector2>();
-            var uv6 = new List<Vector2>();
-            var uv7 = new List<Vector2>();
-            var uv8 = new List<Vector2>();
-            for (int i = 0; i < repetitionCount; i++) {
-                foreach (var index in source.Triangles) {
-                    triangles.Add(index + source.Vertices.Count * i);
-                }
-                uv.AddRange(source.Mesh.uv);
-                uv2.AddRange(source.Mesh.uv2);
-                uv3.AddRange(source.Mesh.uv3);
-                uv4.AddRange(source.Mesh.uv4);
-#if UNITY_2018_2_OR_NEWER
-                uv5.AddRange(source.Mesh.uv5);
-                uv6.AddRange(source.Mesh.uv6);
-                uv7.AddRange(source.Mesh.uv7);
-                uv8.AddRange(source.Mesh.uv8);
-#endif
+            int[] sourceTriangles = null;
+            Vector2[] sourceUv = null; 
+            Vector2[] sourceUv2 = null; 
+            Vector2[] sourceUv3 = null; 
+            Vector2[] sourceUv4 = null; 
+            Vector2[] sourceUv5 = null; 
+            Vector2[] sourceUv6 = null; 
+            Vector2[] sourceUv7 = null; 
+            Vector2[] sourceUv8 = null; 
+            
+            if (_repetitionCount != repetitionCount || isSourceDirty) {
+                _vertices = new Vector3[_sourceVertices.Count * repetitionCount];
+                _normals = new Vector3[_sourceVertices.Count * repetitionCount];
+                
+                sourceTriangles = source.Triangles;
+                sourceUv = source.Mesh.uv; 
+                sourceUv2 = source.Mesh.uv2; 
+                sourceUv3 = source.Mesh.uv3; 
+                sourceUv4 = source.Mesh.uv4; 
+                sourceUv5 = source.Mesh.uv5; 
+                sourceUv6 = source.Mesh.uv6; 
+                sourceUv7 = source.Mesh.uv7; 
+                sourceUv8 = source.Mesh.uv8; 
+                _uv = new Vector2[sourceUv.Length * repetitionCount];
+                _uv2 = sourceUv2 != null ? new Vector2[sourceUv2.Length * repetitionCount] : null;
+                _uv3 = sourceUv3 != null ? new Vector2[sourceUv3.Length * repetitionCount] : null;
+                _uv4 = sourceUv4 != null ? new Vector2[sourceUv4.Length * repetitionCount] : null;
+                _uv5 = sourceUv5 != null ? new Vector2[sourceUv5.Length * repetitionCount] : null;
+                _uv6 = sourceUv6 != null ? new Vector2[sourceUv6.Length * repetitionCount] : null;
+                _uv7 = sourceUv7 != null ? new Vector2[sourceUv7.Length * repetitionCount] : null;
+                _uv8 = sourceUv8 != null ? new Vector2[sourceUv8.Length * repetitionCount] : null;
+                _triangles = new int[sourceTriangles.Length * repetitionCount];
             }
 
             // computing vertices and normals
-            var bentVertices = new List<MeshVertex>(source.Vertices.Count);
             float offset = 0;
-            for (int i = 0; i < repetitionCount; i++) {
+            for (var i = 0; i < repetitionCount; i++) {
 
                 sampleCache.Clear();
                 // for each mesh vertex, we found its projection on the curve
-                foreach (var vert in source.Vertices) {
-                    float distance = vert.position.x - source.MinX + offset;
+                for (var j = 0; j < _sourceVertices.Count; j++) {
+                    var vert = _sourceVertices[j];
+                    var distance = vert.position.x - source.MinX + offset;
                     CurveSample sample;
                     if (!sampleCache.TryGetValue(distance, out sample)) {
                         if (!useSpline) {
                             if (distance > curve.Length) continue;
                             sample = curve.GetSampleAtDistance(distance);
                         } else {
-                            float distOnSpline = intervalStart + distance;
+                            var distOnSpline = intervalStart + distance;
                             //if (true) { //spline.isLoop) {
-                                while (distOnSpline > spline.Length) {
-                                    distOnSpline -= spline.Length;
-                                }
+                            while (distOnSpline > spline.Length) {
+                                distOnSpline -= spline.Length;
+                            }
+
                             //} else if (distOnSpline > spline.Length) {
                             //    continue;
                             //}
                             sample = spline.GetSampleAtDistance(distOnSpline);
                         }
+
                         sampleCache[distance] = sample;
                     }
-                    bentVertices.Add(sample.GetBent(vert));
+
+                    var bent = sample.GetBent(vert);
+                    var vertexIndex = i * _sourceVertices.Count + j;
+                    _vertices[vertexIndex] = bent.position;
+                    _normals[vertexIndex] = bent.normal;
                 }
+
                 offset += source.Length;
+                
+                if (_repetitionCount == repetitionCount && !isSourceDirty) continue;
+                for (var j = 0; j < sourceTriangles.Length; j++) {
+                    var index = sourceTriangles[j];
+                    _triangles[j + i * sourceTriangles.Length] = index + source.Vertices.Count * i;
+                }
+
+                Array.Copy(sourceUv, 0, _uv, i * sourceUv.Length, sourceUv.Length);
+                Array.Copy(sourceUv2, 0, _uv2, i * sourceUv2.Length, sourceUv2.Length);
+                Array.Copy(sourceUv3, 0, _uv3, i * sourceUv3.Length, sourceUv3.Length);
+                Array.Copy(sourceUv4, 0, _uv4, i * sourceUv4.Length, sourceUv4.Length);
+                Array.Copy(sourceUv5, 0, _uv5, i * sourceUv5.Length, sourceUv5.Length);
+                Array.Copy(sourceUv6, 0, _uv6, i * sourceUv6.Length, sourceUv6.Length);
+                Array.Copy(sourceUv7, 0, _uv7, i * sourceUv7.Length, sourceUv7.Length);
+                Array.Copy(sourceUv8, 0, _uv8, i * sourceUv8.Length, sourceUv8.Length);
             }
 
             MeshUtility.Update(result,
-                source.Mesh,
-                triangles,
-                bentVertices.Select(b => b.position),
-                bentVertices.Select(b => b.normal),
-                uv,
-                uv2,
-                uv3,
-                uv4,
-                uv5,
-                uv6,
-                uv7,
-                uv8);
+                _triangles,
+                _vertices,
+                _normals,
+                _uv, _uv2, _uv3, _uv4, _uv5, _uv6, _uv7, _uv8);
         }
 
         private void FillStretch() {
-            var bentVertices = new List<MeshVertex>(source.Vertices.Count);
+            if (isSourceDirty) {
+                _triangles = source.Triangles;
+                _uv = source.Mesh.uv;
+                _uv2 = source.Mesh.uv2;
+                _uv3 = source.Mesh.uv3;
+                _uv4 = source.Mesh.uv4;
+                _uv5 = source.Mesh.uv5;
+                _uv6 = source.Mesh.uv6;
+                _uv7 = source.Mesh.uv7;
+                _uv8 = source.Mesh.uv8;
+                _vertices = new Vector3[_sourceVertices.Count];
+                _normals = new Vector3[_sourceVertices.Count];
+            }
             sampleCache.Clear();
-            // for each mesh vertex, we found its projection on the curve
-            foreach (var vert in source.Vertices) {
-                float distanceRate = source.Length == 0 ? 0 : Math.Abs(vert.position.x - source.MinX) / source.Length;
-                CurveSample sample;
-                if (!sampleCache.TryGetValue(distanceRate, out sample)) {
+            for (var i = 0; i < _sourceVertices.Count; i++) {
+                var vert = _sourceVertices[i];
+                var distanceRate = source.Length == 0 ? 0 : Math.Abs(vert.position.x - source.MinX) / source.Length;
+                if (!sampleCache.TryGetValue(distanceRate, out var sample)) {
                     if (!useSpline) {
                         sample = curve.GetSampleAtDistance(curve.Length * distanceRate);
                     } else {
-                        float intervalLength = intervalEnd == 0 ? spline.Length - intervalStart : intervalEnd - intervalStart;
-                        float distOnSpline = intervalStart + intervalLength * distanceRate;
-                        if(distOnSpline > spline.Length) {
+                        var intervalLength =
+                            intervalEnd == 0 ? spline.Length - intervalStart : intervalEnd - intervalStart;
+                        var distOnSpline = intervalStart + intervalLength * distanceRate;
+                        if (distOnSpline > spline.Length) {
                             distOnSpline = spline.Length;
-                            Debug.Log("dist " + distOnSpline + " spline length " + spline.Length + " start " + intervalStart);
                         }
 
                         sample = spline.GetSampleAtDistance(distOnSpline);
                     }
+
                     sampleCache[distanceRate] = sample;
                 }
 
-                bentVertices.Add(sample.GetBent(vert));
+                var bent = sample.GetBent(vert);
+                _vertices[i] = bent.position;
+                _normals[i] = bent.normal;
             }
 
             MeshUtility.Update(result,
-                source.Mesh,
-                source.Triangles,
-                bentVertices.Select(b => b.position),
-                bentVertices.Select(b => b.normal));
+                _triangles,
+                _vertices,
+                _normals,
+                _uv, _uv2, _uv3, _uv4, _uv5, _uv6, _uv7, _uv8);
+            
             if (TryGetComponent(out MeshCollider collider)) {
                 collider.sharedMesh = result;
             }
