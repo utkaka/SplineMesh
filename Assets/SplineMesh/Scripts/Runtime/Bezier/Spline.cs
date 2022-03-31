@@ -52,8 +52,7 @@ namespace SplineMesh {
         /// <summary>
         /// Event raised when one of the curve changes.
         /// </summary>
-        [HideInInspector]
-        public UnityEvent CurveChanged = new UnityEvent();
+        public event Action CurveChanged;
 
         /// <summary>
         /// Clear the nodes and curves, then add two default nodes for the reset spline to be visible in editor.
@@ -87,7 +86,7 @@ namespace SplineMesh {
             foreach (var curve in curves) {
                 Length += curve.Length;
             }
-            CurveChanged.Invoke();
+            CurveChanged?.Invoke();
         }
 
         /// <summary>
@@ -131,7 +130,7 @@ namespace SplineMesh {
                 SplineNode next = nodes[i + 1];
 
                 CubicBezierCurve curve = new CubicBezierCurve(n, next);
-                curve.Changed.AddListener(UpdateAfterCurveChanged);
+                curve.Changed += UpdateAfterCurveChanged;
                 curves.Add(curve);
             }
             RaiseNodeListChanged(new ListChangedEventArgs<SplineNode>() {
@@ -173,7 +172,7 @@ namespace SplineMesh {
             if (nodes.Count != 1) {
                 SplineNode previousNode = nodes[nodes.IndexOf(node) - 1];
                 CubicBezierCurve curve = new CubicBezierCurve(previousNode, node);
-                curve.Changed.AddListener(UpdateAfterCurveChanged);
+                curve.Changed += UpdateAfterCurveChanged;
                 curves.Add(curve);
             }
             RaiseNodeListChanged(new ListChangedEventArgs<SplineNode>() {
@@ -202,7 +201,7 @@ namespace SplineMesh {
             curves[index - 1].ConnectEnd(node);
 
             CubicBezierCurve curve = new CubicBezierCurve(node, nextNode);
-            curve.Changed.AddListener(UpdateAfterCurveChanged);
+            curve.Changed += UpdateAfterCurveChanged;
             curves.Insert(index, curve);
             RaiseNodeListChanged(new ListChangedEventArgs<SplineNode>() {
                 type = ListChangeType.Insert,
@@ -231,7 +230,7 @@ namespace SplineMesh {
             }
 
             nodes.RemoveAt(index);
-            toRemove.Changed.RemoveListener(UpdateAfterCurveChanged);
+            toRemove.Changed -= UpdateAfterCurveChanged;
             curves.Remove(toRemove);
 
             RaiseNodeListChanged(new ListChangedEventArgs<SplineNode>() {
@@ -256,14 +255,14 @@ namespace SplineMesh {
                 end = nodes[nodes.Count - 1];
                 start.Changed += StartNodeChanged;
                 end.Changed += EndNodeChanged;
-                StartNodeChanged(null, null);
+                StartNodeChanged(null);
             } else {
                 start = null;
                 end = null;
             }
         }
 
-        private void StartNodeChanged(object sender, EventArgs e) {
+        private void StartNodeChanged(SplineNode node) {
             end.Changed -= EndNodeChanged;
             end.Position = start.Position;
             end.Direction = start.Direction;
@@ -273,7 +272,7 @@ namespace SplineMesh {
             end.Changed += EndNodeChanged;
         }
 
-        private void EndNodeChanged(object sender, EventArgs e) {
+        private void EndNodeChanged(SplineNode node) {
             start.Changed -= StartNodeChanged;
             start.Position = end.Position;
             start.Direction = end.Direction;

@@ -48,11 +48,11 @@ namespace SplineMesh {
             spline.NodeListChanged += (s, e) => {
                 toUpdate = true;
                 foreach (CubicBezierCurve curve in spline.GetCurves()) {
-                    curve.Changed.AddListener(() => toUpdate = true);
+                    curve.Changed += () => toUpdate = true;
                 }
             };
             foreach (CubicBezierCurve curve in spline.GetCurves()) {
-                curve.Changed.AddListener(() => toUpdate = true);
+                curve.Changed += () => toUpdate = true;
             }
         }
 

@@ -22,7 +22,7 @@ namespace SplineMesh {
                 position.x = value.x;
                 position.y = value.y;
                 position.z = value.z;
-                if(Changed != null) Changed(this, EventArgs.Empty);
+                if(Changed != null) Changed(this);
             }
         }
         [SerializeField]
@@ -38,7 +38,7 @@ namespace SplineMesh {
                 direction.x = value.x;
                 direction.y = value.y;
                 direction.z = value.z;
-                if (Changed != null) Changed(this, EventArgs.Empty);
+                if (Changed != null) Changed(this);
             }
         }
         [SerializeField]
@@ -56,7 +56,7 @@ namespace SplineMesh {
                 up.x = value.x;
                 up.y = value.y;
                 up.z = value.z;
-                if (Changed != null) Changed(this, EventArgs.Empty);
+                if (Changed != null) Changed(this);
             }
         }
         [SerializeField]
@@ -72,7 +72,7 @@ namespace SplineMesh {
                 if (scale.Equals(value)) return;
                 scale.x = value.x;
                 scale.y = value.y;
-                if (Changed != null) Changed(this, EventArgs.Empty);
+                if (Changed != null) Changed(this);
             }
         }
         [SerializeField]
@@ -87,7 +87,7 @@ namespace SplineMesh {
             set {
                 if (roll == value) return;
                 roll = value;
-                if (Changed != null) Changed(this, EventArgs.Empty);
+                if (Changed != null) Changed(this);
             }
         }
         [SerializeField]
@@ -101,7 +101,6 @@ namespace SplineMesh {
         /// <summary>
         /// Event raised when position, direction, scale or roll changes.
         /// </summary>
-        [HideInInspector]
-        public event EventHandler Changed;
+        public event Action<SplineNode> Changed;
     }
 }

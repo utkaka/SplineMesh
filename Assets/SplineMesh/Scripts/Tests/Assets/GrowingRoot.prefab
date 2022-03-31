@@ -215,9 +215,6 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: 0.21807383, y: 0.21807383}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 0.52324677, y: 0.72200584, z: 0.18689477}
       direction: {x: 0.27885437, y: 0.7987348, z: 0.205123}
@@ -230,9 +227,6 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: 0.09462744, y: 0.09462744}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 0.32932386, y: 0.8350123, z: 0.61059666}
       direction: {x: 0.41009626, y: 0.72716165, z: 0.71581763}
@@ -245,9 +239,6 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: -0.026015252, y: -0.026015252}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 0.4733312, y: 0.50501776, z: 0.94335675}
       direction: {x: 0.25768638, y: 0.50567293, z: 1.0010254}
@@ -260,14 +251,8 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: -0.1516675, y: -0.1516675}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   Length: 2.402225
   isLoop: 0
-  CurveChanged:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!114 &3855607674470699607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -371,9 +356,6 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: 0.21968797, y: 0.21968797}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 1.3743906, y: 0.9122891, z: 0.018990993}
       direction: {x: 1.5212258, y: 0.94871634, z: 0.06874582}
@@ -386,9 +368,6 @@ MonoBehaviour:
       up: {x: 0.6152222, y: 0.40862685, z: -0.67418534}
       scale: {x: 0.1225474, y: 0.1225474}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 1.7120523, y: 0.74845743, z: 0.13280642}
       direction: {x: 1.6171173, y: 0.511441, z: 0.010301903}
@@ -401,9 +380,6 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: 0.012860179, y: 0.012860179}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 1.7505646, y: 0.5950213, z: 0.40189946}
       direction: {x: 1.4574203, y: 0.7395141, z: 0.6113548}
@@ -416,14 +392,8 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: -0.1516675, y: -0.1516675}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   Length: 2.7909749
   isLoop: 0
-  CurveChanged:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!114 &7810583611682827295
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -724,9 +694,6 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: 0.14831041, y: 0.14831041}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 1.3681183, y: 0.54701877, z: 0.44029933}
       direction: {x: 1.4530716, y: 0.5783042, z: 0.5525289}
@@ -739,9 +706,6 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: 0.05894625, y: 0.05894625}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 1.0562744, y: 0.52288294, z: 0.7519206}
       direction: {x: 0.905365, y: 0.4941225, z: 0.616582}
@@ -754,9 +718,6 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: 0.0022488714, y: 0.0022488714}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 1.1648102, y: 0.5950213, z: 0.53383774}
       direction: {x: 1.239006, y: 0.59774375, z: 0.5441081}
@@ -769,9 +730,6 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: -0.051392842, y: -0.051392842}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   - n1:
       position: {x: 1.3726654, y: 0.6010011, z: 0.74389964}
       direction: {x: 1.3407974, y: 0.5449944, z: 0.87333804}
@@ -784,14 +742,8 @@ MonoBehaviour:
       up: {x: 0, y: 1, z: 0}
       scale: {x: -0.091000505, y: -0.091000505}
       roll: 0
-    Changed:
-      m_PersistentCalls:
-        m_Calls: []
   Length: 1.882156
   isLoop: 0
-  CurveChanged:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!114 &8882549260980210328
 MonoBehaviour:
   m_ObjectHideFlags: 0

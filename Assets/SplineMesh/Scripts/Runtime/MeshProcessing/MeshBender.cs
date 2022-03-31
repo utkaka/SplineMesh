@@ -76,11 +76,11 @@ namespace SplineMesh {
             if (this.curve == curve) return;
             if (curve == null) throw new ArgumentNullException("curve");
             if (this.curve != null) {
-                this.curve.Changed.RemoveListener(SetDirty);
+                this.curve.Changed -= SetDirty;
             }
             this.curve = curve;
             spline = null;
-            curve.Changed.AddListener(SetDirty);
+            curve.Changed += SetDirty;
             useSpline = false;
             SetDirty();
         }
@@ -95,7 +95,8 @@ namespace SplineMesh {
         /// <param name="intervalStart">Distance from the spline start to place the mesh minimum X.<param>
         /// <param name="intervalEnd">Distance from the spline start to stop deforming the source mesh.</param>
         public void SetInterval(Spline spline, float intervalStart, float intervalEnd = 0) {
-            if (this.spline == spline && this.intervalStart == intervalStart && this.intervalEnd == intervalEnd) return;
+            if (this.spline == spline && Math.Abs(this.intervalStart - intervalStart) < float.Epsilon &&
+                Math.Abs(this.intervalEnd - intervalEnd) < float.Epsilon) return;
             if (spline == null) throw new ArgumentNullException("spline");
             if (intervalStart < 0 || intervalStart >= spline.Length) {
                 throw new ArgumentOutOfRangeException("interval start must be 0 or greater and lesser than spline length (was " + intervalStart + ")");
@@ -103,14 +104,15 @@ namespace SplineMesh {
             if (intervalEnd != 0 && intervalEnd <= intervalStart || intervalEnd > spline.Length) {
                 throw new ArgumentOutOfRangeException("interval end must be 0 or greater than interval start, and lesser than spline length (was " + intervalEnd + ")");
             }
-            if (this.spline != null) {
-                // unlistening previous spline
-                this.spline.CurveChanged.RemoveListener(SetDirty);
-            }
-            this.spline = spline;
-            // listening new spline
-            spline.CurveChanged.AddListener(SetDirty);
 
+            if (spline != this.spline) {
+                if (this.spline != null) {
+                    this.spline.CurveChanged -= SetDirty;
+                }
+                this.spline = spline;
+                spline.CurveChanged += SetDirty;   
+            }
+            
             curve = null;
             this.intervalStart = intervalStart;
             this.intervalEnd = intervalEnd;
@@ -164,7 +166,7 @@ namespace SplineMesh {
 
         private void OnDestroy() {
             if(curve != null) {
-                curve.Changed.RemoveListener(Compute);
+                curve.Changed -= Compute;
             }
         }
 

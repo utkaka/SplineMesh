@@ -52,8 +52,7 @@ namespace SplineMesh {
             }
         }
 
-        private void OnNodeChanged(object sender, EventArgs e) {
-            var node = (SplineNode)sender;
+        private void OnNodeChanged(SplineNode node) {
             SmoothNode(node);
             var index = Spline.nodes.IndexOf(node);
             if(index > 0) {

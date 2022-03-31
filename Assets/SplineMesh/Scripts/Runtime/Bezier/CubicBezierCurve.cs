@@ -30,7 +30,7 @@ namespace SplineMesh {
         /// <summary>
         /// This event is raised when of of the control points has moved.
         /// </summary>
-        public UnityEvent Changed = new UnityEvent();
+        public event Action Changed;
 
         /// <summary>
         /// Build a new cubic Bézier curve between two given spline node.
@@ -42,7 +42,7 @@ namespace SplineMesh {
             this.n2 = n2;
             n1.Changed += ComputeSamples;
             n2.Changed += ComputeSamples;
-            ComputeSamples(null, null);
+            ComputeSamples(null);
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace SplineMesh {
             this.n1.Changed -= ComputeSamples;
             this.n1 = n1;
             n1.Changed += ComputeSamples;
-            ComputeSamples(null, null);
+            ComputeSamples(null);
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace SplineMesh {
             this.n2.Changed -= ComputeSamples;
             this.n2 = n2;
             n2.Changed += ComputeSamples;
-            ComputeSamples(null, null);
+            ComputeSamples(null);
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace SplineMesh {
             return Mathf.Lerp(n1.Roll, n2.Roll, t);
         }
 
-        private void ComputeSamples(object sender, EventArgs e) {
+        private void ComputeSamples(SplineNode node) {
             samples.Clear();
             Length = 0;
             Vector3 previousPosition = GetLocation(0);

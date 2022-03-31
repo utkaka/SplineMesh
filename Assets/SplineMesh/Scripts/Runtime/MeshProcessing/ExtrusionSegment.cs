@@ -109,11 +109,11 @@ namespace SplineMesh {
             if (curve == null) throw new ArgumentNullException("curve");
 
             if (this.curve != null) {
-                this.curve.Changed.RemoveListener(SetDirty);
+                this.curve.Changed -= SetDirty;
             }
             this.curve = curve;
             spline = null;
-            curve.Changed.AddListener(SetDirty);
+            curve.Changed += SetDirty;
             useSpline = false;
             SetDirty();
         }
@@ -129,11 +129,11 @@ namespace SplineMesh {
             }
             if (this.spline != null) {
                 // unlistening previous spline
-                this.spline.CurveChanged.RemoveListener(SetDirty);
+                this.spline.CurveChanged -= SetDirty;
             }
             this.spline = spline;
             // listening new spline
-            spline.CurveChanged.AddListener(SetDirty);
+            spline.CurveChanged += SetDirty;
 
             curve = null;
             this.intervalStart = intervalStart;
