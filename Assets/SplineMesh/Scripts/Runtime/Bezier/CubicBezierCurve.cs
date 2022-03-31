@@ -144,8 +144,7 @@ namespace SplineMesh {
                 GetScale(time),
                 GetRoll(time),
                 distance,
-                time,
-                this);
+                time);
         }
 
         /// <summary>

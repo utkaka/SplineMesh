@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace SplineMesh {
@@ -17,7 +14,6 @@ namespace SplineMesh {
         public readonly float roll;
         public readonly float distanceInCurve;
         public readonly float timeInCurve;
-        public readonly CubicBezierCurve curve;
 
         private Quaternion rotation;
 
@@ -34,7 +30,7 @@ namespace SplineMesh {
             }
         }
 
-        public CurveSample(Vector3 location, Vector3 tangent, Vector3 up, Vector2 scale, float roll, float distanceInCurve, float timeInCurve, CubicBezierCurve curve) {
+        public CurveSample(Vector3 location, Vector3 tangent, Vector3 up, Vector2 scale, float roll, float distanceInCurve, float timeInCurve) {
             this.location = location;
             this.tangent = tangent;
             this.up = up;
@@ -42,7 +38,6 @@ namespace SplineMesh {
             this.scale = scale;
             this.distanceInCurve = distanceInCurve;
             this.timeInCurve = timeInCurve;
-            this.curve = curve;
             rotation = Quaternion.identity;
         }
 
@@ -87,8 +82,7 @@ namespace SplineMesh {
                 Vector2.Lerp(a.scale, b.scale, t),
                 Mathf.Lerp(a.roll, b.roll, t),
                 Mathf.Lerp(a.distanceInCurve, b.distanceInCurve, t),
-                Mathf.Lerp(a.timeInCurve, b.timeInCurve, t),
-                a.curve);
+                Mathf.Lerp(a.timeInCurve, b.timeInCurve, t));
         }
 
         public MeshVertex GetBent(MeshVertex vert) {
