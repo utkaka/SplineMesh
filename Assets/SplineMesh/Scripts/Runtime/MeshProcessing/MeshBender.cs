@@ -404,7 +404,7 @@ namespace SplineMesh {
             job.Schedule(_sourceVertices.Length, 4, default).Complete();
             
             jobVerticesOut.Reinterpret<Vector3>().CopyTo(_vertices);
-            jobVerticesOut.Reinterpret<Vector3>().CopyTo(_normals);
+            jobNormalsOut.Reinterpret<Vector3>().CopyTo(_normals);
 
             jobCurveSamples.Dispose();
             jobVerticesIn.Dispose();

@@ -56,7 +56,7 @@ namespace SplineMesh {
 #if UNITY_2017_3_OR_NEWER
             mesh.indexFormat = source.indexFormat;
 #endif*/
-	        mesh.vertices = vertices;
+            mesh.vertices = vertices;
             mesh.normals = normals;
             mesh.uv = uv;
             mesh.uv2 = uv2;
