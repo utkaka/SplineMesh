@@ -297,8 +297,7 @@ namespace SplineMesh {
                 for (var j = 0; j < _sourceVertices.Length; j++) {
                     var vert = _sourceVertices[j];
                     var distance = vert.position.x - source.MinX + offset;
-                    CurveSample sample;
-                    if (!sampleCache.TryGetValue(distance, out sample)) {
+                    if (!sampleCache.TryGetValue(distance, out var sample)) {
                         if (!useSpline) {
                             if (distance > curve.Length) continue;
                             sample = curve.GetSampleAtDistance(distance);

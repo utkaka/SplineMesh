@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace SplineMesh {
     /// <summary>
@@ -19,7 +17,7 @@ namespace SplineMesh {
         private const int STEP_COUNT = 30;
         private const float T_STEP = 1.0f / STEP_COUNT;
 
-        private readonly List<CurveSample> samples = new List<CurveSample>(STEP_COUNT);
+        private readonly CurveSample[] samples = new CurveSample[STEP_COUNT + 1];
 
         public SplineNode n1, n2;
 
@@ -101,7 +99,7 @@ namespace SplineMesh {
             var omt = 1f - t;
             var omt2 = omt * omt;
             var t2 = t * t;
-            float3 tangent =
+            var tangent =
                 n1.Position * -omt2 +
                 n1.Direction * (3 * omt2 - 2 * omt) +
                 GetInverseDirection() * (-3 * t2 + 2 * t) +
@@ -122,17 +120,17 @@ namespace SplineMesh {
         }
 
         private void ComputeSamples(SplineNode node) {
-            samples.Clear();
             Length = 0;
             var previousPosition = GetLocation(0);
+            var index = 0;
             for (float t = 0; t < 1; t += T_STEP) {
                 var position = GetLocation(t);
                 Length += math.distance(previousPosition, position);
                 previousPosition = position;
-                samples.Add(CreateSample(Length, t));
+                samples[index++] = CreateSample(Length, t);
             }
             Length += math.distance(previousPosition, GetLocation(1));
-            samples.Add(CreateSample(Length, 1));
+            samples[index] = CreateSample(Length, 1);
 
             if (Changed != null) Changed.Invoke();
         }
@@ -218,7 +216,7 @@ namespace SplineMesh {
             if(closestIndex == 0) {
                 previous = samples[closestIndex];
                 next = samples[closestIndex + 1];
-            } else if(closestIndex == samples.Count - 1) {
+            } else if(closestIndex == samples.Length - 1) {
                 previous = samples[closestIndex - 1];
                 next = samples[closestIndex];
             } else {
