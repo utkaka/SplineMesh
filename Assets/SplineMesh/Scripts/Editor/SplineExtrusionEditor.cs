@@ -25,7 +25,7 @@ namespace SplineMesh {
         }
 
         void OnSceneGUI() {
-            Event e = Event.current;
+            /*Event e = Event.current;
             if (e.type == EventType.MouseDown) {
                 Undo.RegisterCompleteObjectUndo(se, "change extruded shape");
                 // if control key pressed, we will have to create a new vertex if position is changed
@@ -111,7 +111,7 @@ namespace SplineMesh {
                 Handles.color = CURVE_COLOR;
                 Vector3 vAtSplineEnd = se.transform.TransformPoint(q * next.point + startSample.location);
                 Handles.DrawLine(point, vAtSplineEnd);
-            }
+            }*/
         }
 
         void DrawQuad(Rect rect, Color color) {

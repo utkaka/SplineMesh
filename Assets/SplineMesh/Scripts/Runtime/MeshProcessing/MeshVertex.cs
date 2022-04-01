@@ -1,21 +1,22 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using System;
+using Unity.Mathematics;
 
 namespace SplineMesh {
     [Serializable]
     public struct MeshVertex {
-        public Vector3 position;
-        public Vector3 normal;
-        public Vector2 uv;
+        public float3 position;
+        public float3 normal;
+        public float2 uv;
 
-        public MeshVertex(Vector3 position, Vector3 normal, Vector2 uv) {
+        public MeshVertex(float3 position, float3 normal, float2 uv) {
             this.position = position;
             this.normal = normal;
             this.uv = uv;
         }
 
-        public MeshVertex(Vector3 position, Vector3 normal)
+        public MeshVertex(float3 position, float3 normal)
             : this(position, normal, Vector2.zero)
         {
         }

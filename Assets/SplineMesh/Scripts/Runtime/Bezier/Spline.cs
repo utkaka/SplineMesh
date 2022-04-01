@@ -289,10 +289,10 @@ namespace SplineMesh {
                 var projection = curve.GetProjectionSample(pointToProject);
                 if (curve == curves[0]) {
                     closest = projection;
-                    minSqrDistance = (projection.location - pointToProject).sqrMagnitude;
+                    minSqrDistance = ((Vector3)projection.location - pointToProject).sqrMagnitude;
                     continue;
                 }
-                var sqrDist = (projection.location - pointToProject).sqrMagnitude;
+                var sqrDist = ((Vector3)projection.location - pointToProject).sqrMagnitude;
                 if (sqrDist < minSqrDistance) {
                     minSqrDistance = sqrDist;
                     closest = projection;

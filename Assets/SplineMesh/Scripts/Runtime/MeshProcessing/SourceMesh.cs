@@ -2,6 +2,7 @@
 using UnityEditor;
 using System.Collections.Generic;
 using System;
+using Unity.Mathematics;
 
 namespace SplineMesh {
     /// <summary>
@@ -19,8 +20,8 @@ namespace SplineMesh {
 
         internal Mesh Mesh { get; }
 
-        private List<MeshVertex> vertices;
-        internal List<MeshVertex> Vertices {
+        private MeshVertex[] vertices;
+        internal MeshVertex[] Vertices {
             get {
                 if (vertices == null) BuildData();
                 return vertices;
@@ -125,22 +126,26 @@ namespace SplineMesh {
 
             // we transform the source mesh vertices according to rotation/translation/scale
             int i = 0;
-            vertices = new List<MeshVertex>(Mesh.vertexCount);
-            foreach (Vector3 vert in Mesh.vertices) {
+            vertices = new MeshVertex[Mesh.vertexCount];
+            for (var index = 0; index < Mesh.vertices.Length; index++) {
+                Vector3 vert = Mesh.vertices[index];
                 var transformed = new MeshVertex(vert, Mesh.normals[i++]);
                 //  application of rotation
                 if (rotation != Quaternion.identity) {
                     transformed.position = rotation * transformed.position;
                     transformed.normal = rotation * transformed.normal;
                 }
+
                 if (scale != Vector3.one) {
                     transformed.position = Vector3.Scale(transformed.position, scale);
                     transformed.normal = Vector3.Scale(transformed.normal, scale);
                 }
+
                 if (translation != Vector3.zero) {
-                    transformed.position += translation;
+                    transformed.position = (Vector3) transformed.position + translation;
                 }
-                vertices.Add(transformed);
+
+                vertices[index] = transformed;
             }
 
             // find the bounds along x

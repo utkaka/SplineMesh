@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
-using UnityEditor;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using Unity.Collections;
+using Unity.Jobs;
 
 namespace SplineMesh {
     /// <summary>
@@ -25,7 +25,8 @@ namespace SplineMesh {
         private CubicBezierCurve curve;
         private Dictionary<float, CurveSample> sampleCache = new Dictionary<float, CurveSample>();
         
-        private List<MeshVertex> _sourceVertices;
+        private MeshVertex[] _sourceVertices;
+        private CurveSample[] _curveSamples;
         private int[] _triangles;
         private Vector3[] _vertices;
         private Vector3[] _normals;
@@ -203,13 +204,13 @@ namespace SplineMesh {
                 _uv6 = source.Mesh.uv6;
                 _uv7 = source.Mesh.uv7;
                 _uv8 = source.Mesh.uv8;
-                _vertices = new Vector3[_sourceVertices.Count];
-                _normals = new Vector3[_sourceVertices.Count];
+                _vertices = new Vector3[_sourceVertices.Length];
+                _normals = new Vector3[_sourceVertices.Length];
             }
 
             sampleCache.Clear();
             // for each mesh vertex, we found its projection on the curve
-            for (var i = 0; i < _sourceVertices.Count; i++) {
+            for (var i = 0; i < _sourceVertices.Length; i++) {
                 var vert = _sourceVertices[i];
                 var distance = vert.position.x - source.MinX;
                 CurveSample sample;
@@ -263,8 +264,8 @@ namespace SplineMesh {
             Vector2[] sourceUv8 = null; 
             
             if (_repetitionCount != repetitionCount || isSourceDirty) {
-                _vertices = new Vector3[_sourceVertices.Count * repetitionCount];
-                _normals = new Vector3[_sourceVertices.Count * repetitionCount];
+                _vertices = new Vector3[_sourceVertices.Length * repetitionCount];
+                _normals = new Vector3[_sourceVertices.Length * repetitionCount];
                 
                 sourceTriangles = source.Triangles;
                 sourceUv = source.Mesh.uv; 
@@ -292,7 +293,7 @@ namespace SplineMesh {
 
                 sampleCache.Clear();
                 // for each mesh vertex, we found its projection on the curve
-                for (var j = 0; j < _sourceVertices.Count; j++) {
+                for (var j = 0; j < _sourceVertices.Length; j++) {
                     var vert = _sourceVertices[j];
                     var distance = vert.position.x - source.MinX + offset;
                     CurveSample sample;
@@ -317,7 +318,7 @@ namespace SplineMesh {
                     }
 
                     var bent = sample.GetBent(vert);
-                    var vertexIndex = i * _sourceVertices.Count + j;
+                    var vertexIndex = i * _sourceVertices.Length + j;
                     _vertices[vertexIndex] = bent.position;
                     _normals[vertexIndex] = bent.normal;
                 }
@@ -327,7 +328,7 @@ namespace SplineMesh {
                 if (_repetitionCount == repetitionCount && !isSourceDirty) continue;
                 for (var j = 0; j < sourceTriangles.Length; j++) {
                     var index = sourceTriangles[j];
-                    _triangles[j + i * sourceTriangles.Length] = index + source.Vertices.Count * i;
+                    _triangles[j + i * sourceTriangles.Length] = index + source.Vertices.Length * i;
                 }
 
                 Array.Copy(sourceUv, 0, _uv, i * sourceUv.Length, sourceUv.Length);
@@ -358,11 +359,18 @@ namespace SplineMesh {
                 _uv6 = source.Mesh.uv6;
                 _uv7 = source.Mesh.uv7;
                 _uv8 = source.Mesh.uv8;
-                _vertices = new Vector3[_sourceVertices.Count];
-                _normals = new Vector3[_sourceVertices.Count];
+                _vertices = new Vector3[_sourceVertices.Length];
+                _normals = new Vector3[_sourceVertices.Length];
+                _curveSamples = new CurveSample[_sourceVertices.Length];
             }
             sampleCache.Clear();
-            for (var i = 0; i < _sourceVertices.Count; i++) {
+            
+            var jobVerticesIn = new NativeArray<MeshVertex>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var jobVerticesOut = new NativeArray<Vector3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var jobNormalsOut = new NativeArray<Vector3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var jobCurveSamples = new NativeArray<CurveSample>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            
+            for (var i = 0; i < _sourceVertices.Length; i++) {
                 var vert = _sourceVertices[i];
                 var distanceRate = source.Length == 0 ? 0 : Math.Abs(vert.position.x - source.MinX) / source.Length;
                 if (!sampleCache.TryGetValue(distanceRate, out var sample)) {
@@ -378,14 +386,30 @@ namespace SplineMesh {
 
                         sample = spline.GetSampleAtDistance(distOnSpline);
                     }
-
                     sampleCache[distanceRate] = sample;
                 }
 
-                var bent = sample.GetBent(vert);
-                _vertices[i] = bent.position;
-                _normals[i] = bent.normal;
+                _curveSamples[i] = sample;
             }
+            
+            jobVerticesIn.CopyFrom(_sourceVertices);
+            jobCurveSamples.CopyFrom(_curveSamples);
+            
+            var job = new CurveSampleBentJob {
+                Curves = jobCurveSamples,
+                VerticesIn = jobVerticesIn,
+                VerticesOut = jobVerticesOut,
+                NormalsOut = jobNormalsOut
+            };
+            job.ScheduleParallel(_sourceVertices.Length, 4, default).Complete();
+            
+            jobVerticesOut.CopyTo(_vertices);
+            jobNormalsOut.CopyTo(_normals);
+
+            jobCurveSamples.Dispose();
+            jobVerticesIn.Dispose();
+            jobVerticesOut.Dispose();
+            jobNormalsOut.Dispose();
 
             MeshUtility.Update(result,
                 _triangles,

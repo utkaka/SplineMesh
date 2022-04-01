@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -206,7 +207,7 @@ namespace SplineMesh {
             int closestIndex = -1;
             int i = 0;
             foreach (var sample in samples) {
-                float sqrDistance = (sample.location - pointToProject).sqrMagnitude;
+                float sqrDistance = ((Vector3)sample.location - pointToProject).sqrMagnitude;
                 if (sqrDistance < minSqrDistance) {
                     minSqrDistance = sqrDistance;
                     closestIndex = i;
@@ -221,8 +222,8 @@ namespace SplineMesh {
                 previous = samples[closestIndex - 1];
                 next = samples[closestIndex];
             } else {
-                var toPreviousSample = (pointToProject - samples[closestIndex - 1].location).sqrMagnitude;
-                var toNextSample = (pointToProject - samples[closestIndex + 1].location).sqrMagnitude;
+                var toPreviousSample = (pointToProject - (Vector3)samples[closestIndex - 1].location).sqrMagnitude;
+                var toNextSample = (pointToProject - (Vector3)samples[closestIndex + 1].location).sqrMagnitude;
                 if (toPreviousSample < toNextSample) {
                     previous = samples[closestIndex - 1];
                     next = samples[closestIndex];
@@ -232,9 +233,9 @@ namespace SplineMesh {
                 }
             }
 
-            var onCurve = Vector3.Project(pointToProject - previous.location, next.location - previous.location) + previous.location;
-            var rate = (onCurve - previous.location).sqrMagnitude / (next.location - previous.location).sqrMagnitude;
-            rate = Mathf.Clamp(rate, 0, 1);
+            var onCurve = Vector3.Project(pointToProject - (Vector3)previous.location, (Vector3)next.location - (Vector3)previous.location) + (Vector3)previous.location;
+            var rate = (onCurve - (Vector3)previous.location).sqrMagnitude / ((Vector3)next.location - (Vector3)previous.location).sqrMagnitude;
+            rate = math.clamp(rate, 0, 1);
             var result = CurveSample.Lerp(previous, next, rate);
             return result;
         }
