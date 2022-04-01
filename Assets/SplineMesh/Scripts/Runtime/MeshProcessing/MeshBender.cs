@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace SplineMesh {
     /// <summary>
@@ -366,8 +367,8 @@ namespace SplineMesh {
             sampleCache.Clear();
             
             var jobVerticesIn = new NativeArray<MeshVertex>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            var jobVerticesOut = new NativeArray<Vector3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            var jobNormalsOut = new NativeArray<Vector3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var jobVerticesOut = new NativeArray<float3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var jobNormalsOut = new NativeArray<float3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var jobCurveSamples = new NativeArray<CurveSample>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             
             for (var i = 0; i < _sourceVertices.Length; i++) {
@@ -401,10 +402,10 @@ namespace SplineMesh {
                 VerticesOut = jobVerticesOut,
                 NormalsOut = jobNormalsOut
             };
-            job.ScheduleParallel(_sourceVertices.Length, 4, default).Complete();
+            job.Schedule(_sourceVertices.Length, 4, default).Complete();
             
-            jobVerticesOut.CopyTo(_vertices);
-            jobNormalsOut.CopyTo(_normals);
+            jobVerticesOut.Reinterpret<Vector3>().CopyTo(_vertices);
+            jobVerticesOut.Reinterpret<Vector3>().CopyTo(_normals);
 
             jobCurveSamples.Dispose();
             jobVerticesIn.Dispose();

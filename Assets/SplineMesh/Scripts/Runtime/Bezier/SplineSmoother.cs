@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -71,23 +72,25 @@ namespace SplineMesh {
             // Orientation is obtained by substracting the vectors to the previous and next way points,
             // which give an acceptable tangent in most situations.
             // Then we apply a part of the average magnitude of these two vectors, according to the smoothness we want.
-            var dir = Vector3.zero;
+            var dir = float3.zero;
             float averageMagnitude = 0;
             if (index != 0) {
                 var previousPos = Spline.nodes[index - 1].Position;
                 var toPrevious = pos - previousPos;
-                averageMagnitude += toPrevious.magnitude;
-                dir += toPrevious.normalized;
+                averageMagnitude += math.sqrt(toPrevious.x * toPrevious.x + toPrevious.y * toPrevious.y +
+                                              toPrevious.z * toPrevious.z);
+                dir += math.normalize(toPrevious);
             }
             if (index != Spline.nodes.Count - 1) {
                 var nextPos = Spline.nodes[index + 1].Position;
                 var toNext = pos - nextPos;
-                averageMagnitude += toNext.magnitude;
-                dir -= toNext.normalized;
+                averageMagnitude += math.sqrt(toNext.x * toNext.x + toNext.y * toNext.y +
+                                              toNext.z * toNext.z);
+                dir -= math.normalize(toNext);
             }
             averageMagnitude *= 0.5f;
             // This constant should vary between 0 and 0.5, and allows to add more or less smoothness.
-            dir = dir.normalized * averageMagnitude * curvature;
+            dir = math.normalize(dir) * averageMagnitude * curvature;
 
             // In SplineMesh, the node direction is not relative to the node position. 
             var controlPoint = dir + pos;

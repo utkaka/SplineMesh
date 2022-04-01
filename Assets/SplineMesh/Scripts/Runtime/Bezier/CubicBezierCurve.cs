@@ -72,7 +72,7 @@ namespace SplineMesh {
         /// Convinent method to get the third control point of the curve, as the direction of the end spline node indicates the starting tangent of the next curve.
         /// </summary>
         /// <returns></returns>
-        public Vector3 GetInverseDirection() {
+        public float3 GetInverseDirection() {
             return (2 * n2.Position) - n2.Direction;
         }
 
@@ -81,10 +81,10 @@ namespace SplineMesh {
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        private Vector3 GetLocation(float t) {
-            float omt = 1f - t;
-            float omt2 = omt * omt;
-            float t2 = t * t;
+        private float3 GetLocation(float t) {
+            var omt = 1f - t;
+            var omt2 = omt * omt;
+            var t2 = t * t;
             return
                 n1.Position * (omt2 * omt) +
                 n1.Direction * (3f * omt2 * t) +
@@ -97,41 +97,41 @@ namespace SplineMesh {
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        private Vector3 GetTangent(float t) {
-            float omt = 1f - t;
-            float omt2 = omt * omt;
-            float t2 = t * t;
-            Vector3 tangent =
-                n1.Position * (-omt2) +
+        private float3 GetTangent(float t) {
+            var omt = 1f - t;
+            var omt2 = omt * omt;
+            var t2 = t * t;
+            float3 tangent =
+                n1.Position * -omt2 +
                 n1.Direction * (3 * omt2 - 2 * omt) +
                 GetInverseDirection() * (-3 * t2 + 2 * t) +
                 n2.Position * (t2);
-            return tangent.normalized;
+            return math.normalize(tangent);
         }
 
-        private Vector3 GetUp(float t) {
-            return Vector3.Lerp(n1.Up, n2.Up, t);
+        private float3 GetUp(float t) {
+            return math.lerp(n1.Up, n2.Up, t);
         }
 
-        private Vector2 GetScale(float t) {
-            return Vector2.Lerp(n1.Scale, n2.Scale, t);
+        private float2 GetScale(float t) {
+            return math.lerp(n1.Scale, n2.Scale, t);
         }
 
         private float GetRoll(float t) {
-            return Mathf.Lerp(n1.Roll, n2.Roll, t);
+            return math.lerp(n1.Roll, n2.Roll, t);
         }
 
         private void ComputeSamples(SplineNode node) {
             samples.Clear();
             Length = 0;
-            Vector3 previousPosition = GetLocation(0);
+            var previousPosition = GetLocation(0);
             for (float t = 0; t < 1; t += T_STEP) {
-                Vector3 position = GetLocation(t);
-                Length += Vector3.Distance(previousPosition, position);
+                var position = GetLocation(t);
+                Length += math.distance(previousPosition, position);
                 previousPosition = position;
                 samples.Add(CreateSample(Length, t));
             }
-            Length += Vector3.Distance(previousPosition, GetLocation(1));
+            Length += math.distance(previousPosition, GetLocation(1));
             samples.Add(CreateSample(Length, 1));
 
             if (Changed != null) Changed.Invoke();
@@ -155,10 +155,10 @@ namespace SplineMesh {
         /// <returns></returns>
         public CurveSample GetSample(float time) {
             AssertTimeInBounds(time);
-            CurveSample previous = samples[0];
-            CurveSample next = default(CurveSample);
-            bool found = false;
-            foreach (CurveSample cp in samples) {
+            var previous = samples[0];
+            var next = default(CurveSample);
+            var found = false;
+            foreach (var cp in samples) {
                 if (cp.timeInCurve >= time) {
                     next = cp;
                     found = true;
@@ -167,7 +167,7 @@ namespace SplineMesh {
                 previous = cp;
             }
             if (!found) throw new Exception("Can't find curve samples.");
-            float t = next == previous ? 0 : (time - previous.timeInCurve) / (next.timeInCurve - previous.timeInCurve);
+            var t = next == previous ? 0 : (time - previous.timeInCurve) / (next.timeInCurve - previous.timeInCurve);
 
             return CurveSample.Lerp(previous, next, t);
         }
@@ -181,10 +181,10 @@ namespace SplineMesh {
             if (d < 0 || d > Length)
                 throw new ArgumentException("Distance must be positive and less than curve length. Length = " + Length + ", given distance was " + d);
 
-            CurveSample previous = samples[0];
-            CurveSample next = default(CurveSample);
-            bool found = false;
-            foreach (CurveSample cp in samples) {
+            var previous = samples[0];
+            var next = default(CurveSample);
+            var found = false;
+            foreach (var cp in samples) {
                 if (cp.distanceInCurve >= d) {
                     next = cp;
                     found = true;
@@ -193,7 +193,7 @@ namespace SplineMesh {
                 previous = cp;
             }
             if (!found) throw new Exception("Can't find curve samples.");
-            float t = next == previous ? 0 : (d - previous.distanceInCurve) / (next.distanceInCurve - previous.distanceInCurve);
+            var t = next == previous ? 0 : (d - previous.distanceInCurve) / (next.distanceInCurve - previous.distanceInCurve);
 
             return CurveSample.Lerp(previous, next, t);
         }
@@ -203,11 +203,11 @@ namespace SplineMesh {
         }
 
         public CurveSample GetProjectionSample(Vector3 pointToProject) {
-            float minSqrDistance = float.PositiveInfinity;
-            int closestIndex = -1;
-            int i = 0;
+            var minSqrDistance = float.PositiveInfinity;
+            var closestIndex = -1;
+            var i = 0;
             foreach (var sample in samples) {
-                float sqrDistance = ((Vector3)sample.location - pointToProject).sqrMagnitude;
+                var sqrDistance = ((Vector3)sample.location - pointToProject).sqrMagnitude;
                 if (sqrDistance < minSqrDistance) {
                     minSqrDistance = sqrDistance;
                     closestIndex = i;

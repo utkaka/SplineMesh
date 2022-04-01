@@ -7,15 +7,15 @@ using UnityEngine;
 
 namespace SplineMesh {
     [BurstCompile]
-    public struct CurveSampleBentJob : IJobFor {
+    public struct CurveSampleBentJob : IJobParallelFor {
         [ReadOnly]
         public NativeArray<CurveSample> Curves;
         [ReadOnly]
         public NativeArray<MeshVertex> VerticesIn;
         [WriteOnly]
-        public NativeArray<Vector3> VerticesOut;
+        public NativeArray<float3> VerticesOut;
         [WriteOnly]
-        public NativeArray<Vector3> NormalsOut;
+        public NativeArray<float3> NormalsOut;
 
         public void Execute(int i) {
             var curve = Curves[i];
@@ -61,15 +61,16 @@ namespace SplineMesh {
         /// </summary>
         public quaternion Rotation {
             get {
-                if (rotation == Quaternion.identity) {
-                    var upVector = math.cross(tangent, Vector3.Cross(Quaternion.AngleAxis(roll, Vector3.forward) * up, tangent).normalized);
-                    rotation = Quaternion.LookRotation(tangent, upVector);
-                }
+                if (!rotation.Equals(quaternion.identity)) return rotation;
+                var upVector = math.cross(tangent,
+                    math.normalize(math.cross(
+                        math.mul(quaternion.AxisAngle(new float3(0.0f, 0.0f, 1.0f), roll), up), tangent)));
+                rotation = quaternion.LookRotation(tangent, upVector);
                 return rotation;
             }
         }
 
-        public CurveSample(Vector3 location, Vector3 tangent, Vector3 up, Vector2 scale, float roll, float distanceInCurve, float timeInCurve) {
+        public CurveSample(float3 location, float3 tangent, float3 up, float2 scale, float roll, float distanceInCurve, float timeInCurve) {
             this.location = location;
             this.tangent = tangent;
             this.up = up;
@@ -115,32 +116,32 @@ namespace SplineMesh {
         /// <returns></returns>
         public static CurveSample Lerp(CurveSample a, CurveSample b, float t) {
             return new CurveSample(
-                Vector3.Lerp(a.location, b.location, t),
-                Vector3.Lerp(a.tangent, b.tangent, t).normalized,
-                Vector3.Lerp(a.up, b.up, t),
-                Vector2.Lerp(a.scale, b.scale, t),
-                Mathf.Lerp(a.roll, b.roll, t),
-                Mathf.Lerp(a.distanceInCurve, b.distanceInCurve, t),
-                Mathf.Lerp(a.timeInCurve, b.timeInCurve, t));
+                math.lerp(a.location, b.location, t),
+                math.normalize(math.lerp(a.tangent, b.tangent, t)),
+                math.lerp(a.up, b.up, t),
+                math.lerp(a.scale, b.scale, t),
+                math.lerp(a.roll, b.roll, t),
+                math.lerp(a.distanceInCurve, b.distanceInCurve, t),
+                math.lerp(a.timeInCurve, b.timeInCurve, t));
         }
 
         public MeshVertex GetBent(MeshVertex vert) {
             var res = new MeshVertex(vert.position, vert.normal, vert.uv);
 
             // application of scale
-            res.position = Vector3.Scale(res.position, new Vector3(0, scale.y, scale.x));
+            res.position = new float3(0.0f, res.position.y * scale.y, res.position.z * scale.x);
 
             // application of roll
-            res.position = Quaternion.AngleAxis(roll, Vector3.right) * res.position;
-            res.normal = Quaternion.AngleAxis(roll, Vector3.right) * res.normal;
+            res.position = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), roll), res.position);
+            res.normal = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), roll), res.normal);
 
             // reset X value
             res.position.x = 0;
 
             // application of the rotation + location
-            Quaternion q = Rotation * Quaternion.Euler(0, -90, 0);
-            res.position = q * res.position + (Vector3)location;
-            res.normal = q * res.normal;
+            Quaternion q = math.mul(Rotation, quaternion.Euler(0, -90, 0));
+            res.position = math.mul(q, res.position) + location;
+            res.normal = math.mul(q, res.normal);
             return res;
         }
     }

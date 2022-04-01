@@ -7,7 +7,7 @@ namespace SplineMesh {
     [CustomEditor(typeof(Spline))]
     public class SplineEditor : Editor {
 
-        private const int QUAD_SIZE = 12;
+        /*private const int QUAD_SIZE = 12;
         private static Color CURVE_COLOR = new Color(0.8f, 0.8f, 0.8f);
         private static Color CURVE_BUTTON_COLOR = new Color(0.8f, 0.8f, 0.8f);
         private static Color DIRECTION_COLOR = Color.red;
@@ -293,6 +293,6 @@ namespace SplineMesh {
                     null,
                     3);
             }
-        }
+        }*/
     }
 }
