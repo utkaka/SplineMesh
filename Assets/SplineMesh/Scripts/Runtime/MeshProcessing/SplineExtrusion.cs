@@ -55,7 +55,7 @@ namespace SplineMesh {
             generated = generatedTranform != null ? generatedTranform.gameObject : UOUtility.Create(generatedName, gameObject);
 
             spline = GetComponentInParent<Spline>();
-            spline.NodeListChanged += (s, e) => toUpdate = true;
+            spline.NodeListChanged += (type, index) => toUpdate = true;
         }
 
         private void Update() {
@@ -70,7 +70,7 @@ namespace SplineMesh {
 
             int i = 0;
             float textureOffset = 0.0f;
-            foreach (CubicBezierCurve curve in spline.GetCurves()) {
+            foreach (CubicBezierCurve curve in spline.Curves) {
                 GameObject go = UOUtility.Create("segment " + i++,
                     generated,
                     typeof(MeshFilter),

@@ -25,16 +25,22 @@ namespace SplineMesh {
         private void OnValidate() {
             // apply scale and roll at each node
             float currentLength = 0;
-            foreach (CubicBezierCurve curve in spline.GetCurves()) {
-                float startRate = currentLength / spline.Length;
+            for (var i = 0; i < spline.Curves.Count; i++) {
+                var curve = spline.Curves[i];
+                var startRate = currentLength / spline.Length;
                 currentLength += curve.Length;
-                float endRate = currentLength / spline.Length;
+                var endRate = currentLength / spline.Length;
+                var node1 = spline.Nodes[i];
+                var node2 = spline.Nodes[i + 1];
+                
+                node1.Scale = Vector2.one * (startScale + (endScale - startScale) * startRate);
+                node2.Scale = Vector2.one * (startScale + (endScale - startScale) * endRate);
 
-                curve.n1.Scale = Vector2.one * (startScale + (endScale - startScale) * startRate);
-                curve.n2.Scale = Vector2.one * (startScale + (endScale - startScale) * endRate);
+                node1.Roll = startRoll + (endRoll - startRoll) * startRate;
+                node2.Roll = startRoll + (endRoll - startRoll) * endRate;
 
-                curve.n1.Roll = startRoll + (endRoll - startRoll) * startRate;
-                curve.n2.Roll = startRoll + (endRoll - startRoll) * endRate;
+                spline.UpdateNode(i, node1);
+                spline.UpdateNode(i + 1, node2);
             }
         }
     }

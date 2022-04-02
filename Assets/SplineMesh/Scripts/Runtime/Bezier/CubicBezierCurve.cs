@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace SplineMesh {
     /// <summary>
@@ -13,57 +13,60 @@ namespace SplineMesh {
     /// </summary>
     [Serializable]
     public class CubicBezierCurve {
-
         private const int STEP_COUNT = 30;
         private const float T_STEP = 1.0f / STEP_COUNT;
 
         private readonly CurveSample[] samples = new CurveSample[STEP_COUNT + 1];
+        
+        /// <summary>
+        /// Event raised when the curve changes.
+        /// </summary>
+        public event Action Changed;
 
-        public SplineNode n1, n2;
+        [FormerlySerializedAs("n1")]
+        [SerializeField]
+        private SplineNode _node1;
+        [FormerlySerializedAs("n2")]
+        [SerializeField]
+        private SplineNode _node2;
 
+        private bool _isDirty;
         /// <summary>
         /// Length of the curve in world unit.
         /// </summary>
         public float Length { get; private set; }
 
         /// <summary>
-        /// This event is raised when of of the control points has moved.
-        /// </summary>
-        public event Action Changed;
-
-        /// <summary>
         /// Build a new cubic Bézier curve between two given spline node.
         /// </summary>
-        /// <param name="n1"></param>
-        /// <param name="n2"></param>
-        public CubicBezierCurve(SplineNode n1, SplineNode n2) {
-            this.n1 = n1;
-            this.n2 = n2;
-            n1.Changed += ComputeSamples;
-            n2.Changed += ComputeSamples;
-            ComputeSamples(null);
+        /// <param name="node1"></param>
+        /// <param name="node2"></param>
+        public CubicBezierCurve(SplineNode node1, SplineNode node2) {
+            _node1 = node1;
+            _node2 = node2;
+            _isDirty = true;
         }
 
         /// <summary>
         /// Change the start node of the curve.
         /// </summary>
-        /// <param name="n1"></param>
-        public void ConnectStart(SplineNode n1) {
-            this.n1.Changed -= ComputeSamples;
-            this.n1 = n1;
-            n1.Changed += ComputeSamples;
-            ComputeSamples(null);
+        /// <param name="node"></param>
+        public void ConnectStart(SplineNode node) {
+            _node1 = node;
+            _isDirty = true;
         }
 
         /// <summary>
         /// Change the end node of the curve.
         /// </summary>
-        /// <param name="n2"></param>
-        public void ConnectEnd(SplineNode n2) {
-            this.n2.Changed -= ComputeSamples;
-            this.n2 = n2;
-            n2.Changed += ComputeSamples;
-            ComputeSamples(null);
+        /// <param name="node"></param>
+        public void ConnectEnd(SplineNode node) {
+            _node2 = node;
+            _isDirty = true;
+        }
+
+        public void SetDirty() {
+            _isDirty = true;
         }
 
         /// <summary>
@@ -71,7 +74,7 @@ namespace SplineMesh {
         /// </summary>
         /// <returns></returns>
         public float3 GetInverseDirection() {
-            return (2 * n2.Position) - n2.Direction;
+            return 2 * _node2.Position - _node2.Direction;
         }
 
         /// <summary>
@@ -84,10 +87,10 @@ namespace SplineMesh {
             var omt2 = omt * omt;
             var t2 = t * t;
             return
-                n1.Position * (omt2 * omt) +
-                n1.Direction * (3f * omt2 * t) +
+                _node1.Position * (omt2 * omt) +
+                _node1.Direction * (3f * omt2 * t) +
                 GetInverseDirection() * (3f * omt * t2) +
-                n2.Position * (t2 * t);
+                _node2.Position * (t2 * t);
         }
 
         /// <summary>
@@ -100,26 +103,27 @@ namespace SplineMesh {
             var omt2 = omt * omt;
             var t2 = t * t;
             var tangent =
-                n1.Position * -omt2 +
-                n1.Direction * (3 * omt2 - 2 * omt) +
+                _node1.Position * -omt2 +
+                _node1.Direction * (3 * omt2 - 2 * omt) +
                 GetInverseDirection() * (-3 * t2 + 2 * t) +
-                n2.Position * (t2);
+                _node2.Position * (t2);
             return math.normalize(tangent);
         }
 
         private float3 GetUp(float t) {
-            return math.lerp(n1.Up, n2.Up, t);
+            return math.lerp(_node1.Up, _node2.Up, t);
         }
 
         private float2 GetScale(float t) {
-            return math.lerp(n1.Scale, n2.Scale, t);
+            return math.lerp(_node1.Scale, _node2.Scale, t);
         }
 
         private float GetRoll(float t) {
-            return math.lerp(n1.Roll, n2.Roll, t);
+            return math.lerp(_node1.Roll, _node2.Roll, t);
         }
 
-        private void ComputeSamples(SplineNode node) {
+        public void ComputeSamples() {
+            if (!_isDirty) return;
             Length = 0;
             var previousPosition = GetLocation(0);
             var index = 0;
@@ -131,8 +135,9 @@ namespace SplineMesh {
             }
             Length += math.distance(previousPosition, GetLocation(1));
             samples[index] = CreateSample(Length, 1);
-
-            if (Changed != null) Changed.Invoke();
+            _isDirty = false;
+            
+            Changed?.Invoke();
         }
 
         private CurveSample CreateSample(float distance, float time) {

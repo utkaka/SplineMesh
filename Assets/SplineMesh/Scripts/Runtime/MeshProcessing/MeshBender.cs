@@ -109,10 +109,10 @@ namespace SplineMesh {
 
             if (spline != this.spline) {
                 if (this.spline != null) {
-                    this.spline.CurveChanged -= SetDirty;
+                    this.spline.Changed -= SetDirty;
                 }
                 this.spline = spline;
-                spline.CurveChanged += SetDirty;   
+                spline.Changed += SetDirty;   
             }
             
             curve = null;

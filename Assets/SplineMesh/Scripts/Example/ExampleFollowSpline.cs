@@ -42,8 +42,8 @@ namespace SplineMesh {
 
         void EditorUpdate() {
             rate += Time.deltaTime / DurationInSecond;
-            if (rate > spline.nodes.Count - 1) {
-                rate -= spline.nodes.Count - 1;
+            if (rate > spline.Nodes.Count - 1) {
+                rate -= spline.Nodes.Count - 1;
             }
             PlaceFollower();
         }

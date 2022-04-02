@@ -64,18 +64,19 @@ namespace SplineMesh {
         private void Contort() {
             float nodeDistance = 0;
             int i = 0;
-            foreach (var n in spline.nodes) {
-                float nodeDistanceRate = nodeDistance / spline.Length;
-                float nodeScale = startScale * (rate - nodeDistanceRate);
-                n.Scale = new Vector2(nodeScale, nodeScale);
-                if (i < spline.curves.Count) {
-                    nodeDistance += spline.curves[i++].Length;
+            for (var index = 0; index < spline.Nodes.Count; index++) {
+                var node = spline.Nodes[index];
+                var nodeDistanceRate = nodeDistance / spline.Length;
+                var nodeScale = startScale * (rate - nodeDistanceRate);
+                node.Scale = new Vector2(nodeScale, nodeScale);
+                spline.UpdateNode(index, node);
+                if (i < spline.Curves.Count) {
+                    nodeDistance += spline.Curves[i++].Length;
                 }
             }
 
             if (generated != null) {
                 meshBender.SetInterval(spline, 0, spline.Length * rate);
-                meshBender.ComputeIfNeeded();
             }
         }
 

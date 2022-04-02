@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace SplineMesh {
     /// <summary>
@@ -11,89 +9,54 @@ namespace SplineMesh {
     /// Note : you shouldn't modify position and direction manualy but use dedicated methods instead, to insure event raising.
     /// </summary>
     [Serializable]
-    public class SplineNode {
-        /// <summary>
-        /// Event raised when position, direction, scale or roll changes.
-        /// </summary>
-        public event Action<SplineNode> Changed;
+    public struct SplineNode {
+        [FormerlySerializedAs("position")]
         [SerializeField]
-        private float3 position;
+        private float3 _position;
+        [FormerlySerializedAs("direction")]
         [SerializeField]
-        private float3 direction;
+        private float3 _direction;
+        [FormerlySerializedAs("up")]
         [SerializeField]
-        private float3 up = Vector3.up;
+        private float3 _up;
+        [FormerlySerializedAs("scale")]
         [SerializeField]
-        private float2 scale = Vector2.one;
+        private float2 _scale;
+        [FormerlySerializedAs("roll")]
         [SerializeField]
-        private float roll;
+        private float _roll;
 
-        /// <summary>
-        /// Node position
-        /// </summary>
         public float3 Position {
-            get => position;
-            set {
-                if (position.Equals(value)) return;
-                position = value;
-                Changed?.Invoke(this);
-            }
+            get => _position;
+            set => _position = value;
         }
 
-        /// <summary>
-        /// Node direction
-        /// </summary>
         public float3 Direction {
-            get => direction;
-            set {
-                if (direction.Equals(value)) return;
-                direction = value;
-                Changed?.Invoke(this);
-            }
+            get => _direction;
+            set => _direction = value;
         }
 
-        /// <summary>
-        /// Up vector to apply at this node.
-        /// Usefull to specify the orientation when the tangent blend with the world UP (gimball lock)
-        /// This value is not used on the spline itself but is commonly used on bended content.
-        /// </summary>
         public float3 Up {
-            get => up;
-            set {
-                if (up.Equals(value)) return;
-                up = value;
-                Changed?.Invoke(this);
-            }
+            get => _up;
+            set => _up = value;
         }
 
-        /// <summary>
-        /// Scale to apply at this node.
-        /// This value is not used on the spline itself but is commonly used on bended content.
-        /// </summary>
         public float2 Scale {
-            get { return scale; }
-            set {
-                if (scale.Equals(value)) return;
-                scale = value;
-                Changed?.Invoke(this);
-            }
+            get => _scale;
+            set => _scale = value;
         }
 
-        /// <summary>
-        /// Roll to apply at this node.
-        /// This value is not used on the spline itself but is commonly used on bended content.
-        /// </summary>
         public float Roll {
-            get => roll;
-            set {
-                if (Math.Abs(roll - value) < float.Epsilon) return;
-                roll = value;
-                Changed?.Invoke(this);
-            }
+            get => _roll;
+            set => _roll = value;
         }
 
         public SplineNode(float3 position, float3 direction) {
-            Position = position;
-            Direction = direction;
+            _position = position;
+            _direction = direction;
+            _up = new float3(0.0f, 1.0f, 0.0f);
+            _scale = new float2(1.0f, 1.0f);
+            _roll = 0.0f;
         }
     }
 }

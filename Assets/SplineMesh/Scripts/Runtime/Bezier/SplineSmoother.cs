@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using Unity.Mathematics;
+﻿using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace SplineMesh {
     [DisallowMultipleComponent]
@@ -26,47 +21,24 @@ namespace SplineMesh {
         }
 
         private void OnEnable() {
-            Spline.NodeListChanged += Spline_NodeListChanged;
-            foreach(var node in Spline.nodes) {
-                node.Changed += OnNodeChanged;
-            }
+            Spline.NodeChanged += OnNodeChanged;
             SmoothAll();
         }
-
+        
         private void OnDisable() {
-            Spline.NodeListChanged -= Spline_NodeListChanged;
-            foreach (var node in Spline.nodes) {
-                node.Changed -= OnNodeChanged;
-            }
+            Spline.NodeChanged -= OnNodeChanged;
         }
 
-        private void Spline_NodeListChanged(object sender, ListChangedEventArgs<SplineNode> args) {
-            if(args.newItems != null) {
-                foreach (var node in args.newItems) {
-                    node.Changed += OnNodeChanged;
-                }
-            }
-            if(args.removedItems != null) {
-                foreach (var node in args.removedItems) {
-                    node.Changed -= OnNodeChanged;
-                }
-            }
+        private void OnNodeChanged(int index) {
+            Spline.NodeChanged -= OnNodeChanged;
+            SmoothNode(index);
+            if (index > 0) SmoothNode(index - 1);
+            if (index < Spline.Nodes.Count - 1) SmoothNode(index + 1);
+            Spline.NodeChanged += OnNodeChanged;
         }
 
-        private void OnNodeChanged(SplineNode node) {
-            SmoothNode(node);
-            var index = Spline.nodes.IndexOf(node);
-            if(index > 0) {
-                SmoothNode(Spline.nodes[index - 1]);
-            }
-            if(index < Spline.nodes.Count - 1) {
-                SmoothNode(Spline.nodes[index + 1]);
-
-            }
-        }
-
-        private void SmoothNode(SplineNode node) {
-            var index = Spline.nodes.IndexOf(node);
+        private void SmoothNode(int index) {
+            var node = Spline.Nodes[index];
             var pos = node.Position;
             // For the direction, we need to compute a smooth vector.
             // Orientation is obtained by substracting the vectors to the previous and next way points,
@@ -75,14 +47,14 @@ namespace SplineMesh {
             var dir = float3.zero;
             float averageMagnitude = 0;
             if (index != 0) {
-                var previousPos = Spline.nodes[index - 1].Position;
+                var previousPos = Spline.Nodes[index - 1].Position;
                 var toPrevious = pos - previousPos;
                 averageMagnitude += math.sqrt(toPrevious.x * toPrevious.x + toPrevious.y * toPrevious.y +
                                               toPrevious.z * toPrevious.z);
                 dir += math.normalize(toPrevious);
             }
-            if (index != Spline.nodes.Count - 1) {
-                var nextPos = Spline.nodes[index + 1].Position;
+            if (index != Spline.Nodes.Count - 1) {
+                var nextPos = Spline.Nodes[index + 1].Position;
                 var toNext = pos - nextPos;
                 averageMagnitude += math.sqrt(toNext.x * toNext.x + toNext.y * toNext.y +
                                               toNext.z * toNext.z);
@@ -97,12 +69,13 @@ namespace SplineMesh {
 
             // We only set one direction at each spline node because SplineMesh only support mirrored direction between curves.
             node.Direction = controlPoint;
+            Spline.UpdateNode(index, node);
         }
 
 
         private void SmoothAll() {
-            foreach(var node in Spline.nodes) {
-                SmoothNode(node);
+            for (var i = 0; i < Spline.Nodes.Count; i++) {
+                SmoothNode(i);
             }
         }
     }

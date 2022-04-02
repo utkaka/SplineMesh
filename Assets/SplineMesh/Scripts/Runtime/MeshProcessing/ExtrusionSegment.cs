@@ -10,11 +10,11 @@ namespace SplineMesh {
     [RequireComponent(typeof(MeshFilter))]
     [RequireComponent(typeof(MeshRenderer))]
     public class ExtrusionSegment : MonoBehaviour {
-        private bool isDirty = false;
+        private bool isDirty;
 
         private MeshFilter mf;
 
-        private bool useSpline = false;
+        private bool useSpline;
         private CubicBezierCurve curve;
         private Spline spline;
         private float intervalStart, intervalEnd;
@@ -129,11 +129,11 @@ namespace SplineMesh {
             }
             if (this.spline != null) {
                 // unlistening previous spline
-                this.spline.CurveChanged -= SetDirty;
+                this.spline.Changed -= SetDirty;
             }
             this.spline = spline;
             // listening new spline
-            spline.CurveChanged += SetDirty;
+            spline.Changed += SetDirty;
 
             curve = null;
             this.intervalStart = intervalStart;

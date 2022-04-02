@@ -54,22 +54,22 @@ namespace SplineMesh {
 
             // we listen changes in the spline's node list and we update the list of segment accordingly
             // this way, if we insert a node between two others, a segment will be inserted too and the data won't shift
-            while (segments.Count < spline.nodes.Count) {
+            while (segments.Count < spline.Nodes.Count) {
                 segments.Add(new TrackSegment());
             }
-            while (segments.Count > spline.nodes.Count) {
+            while (segments.Count > spline.Nodes.Count) {
                 segments.RemoveAt(segments.Count - 1);
             }
-            spline.NodeListChanged += (s, e) => {
-                switch (e.type) {
-                    case ListChangeType.Add:
+            spline.NodeListChanged += (type, index) => {
+                switch (type) {
+                    case Spline.ListChangeType.Add:
                         segments.Add(new TrackSegment());
                         break;
-                    case ListChangeType.Remove:
-                        segments.RemoveAt(e.removeIndex);
+                    case Spline.ListChangeType.Remove:
+                        segments.RemoveAt(index);
                         break;
-                    case ListChangeType.Insert:
-                        segments.Insert(e.insertIndex, new TrackSegment());
+                    case Spline.ListChangeType.Insert:
+                        segments.Insert(index, new TrackSegment());
                         break;
                 }
                 toUpdate = true;
@@ -95,8 +95,8 @@ namespace SplineMesh {
         public void CreateMeshes() {
             List<GameObject> used = new List<GameObject>();
 
-            for (int i = 0; i < spline.GetCurves().Count; i++) {
-                var curve = spline.GetCurves()[i];
+            for (int i = 0; i < spline.Curves.Count; i++) {
+                var curve = spline.Curves[i];
                 foreach (var tm in segments[i].transformedMeshes) {
                     if (tm.mesh == null) {
                         // if there is no mesh specified for this segment, we ignore it.

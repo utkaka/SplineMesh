@@ -55,7 +55,7 @@ namespace SplineMesh {
             generated = generatedTranform != null ? generatedTranform.gameObject : UOUtility.Create(generatedName, gameObject);
 
             spline = GetComponentInParent<Spline>();
-            spline.NodeListChanged += (s, e) => toUpdate = true;
+            spline.NodeListChanged += (type, index) => toUpdate = true;
 
             toUpdate = true;
         }
@@ -84,7 +84,7 @@ namespace SplineMesh {
 
             if (curveSpace) {
                 int i = 0;
-                foreach (var curve in spline.curves) {
+                foreach (var curve in spline.Curves) {
                     var go = FindOrCreate("segment " + i++ + " mesh");
                     go.GetComponent<MeshBender>().SetInterval(curve);
                     go.GetComponent<MeshCollider>().enabled = generateCollider;

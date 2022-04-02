@@ -45,15 +45,7 @@ namespace SplineMesh {
             generated = generatedTranform != null ? generatedTranform.gameObject : UOUtility.Create(generatedName, gameObject);
 
             spline = GetComponentInParent<Spline>();
-            spline.NodeListChanged += (s, e) => {
-                toUpdate = true;
-                foreach (CubicBezierCurve curve in spline.GetCurves()) {
-                    curve.Changed += () => toUpdate = true;
-                }
-            };
-            foreach (CubicBezierCurve curve in spline.GetCurves()) {
-                curve.Changed += () => toUpdate = true;
-            }
+            spline.Changed += () => { toUpdate = true;};
         }
 
         private void OnValidate() {
