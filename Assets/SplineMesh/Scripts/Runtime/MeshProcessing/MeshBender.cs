@@ -197,14 +197,14 @@ namespace SplineMesh {
         private void FillOnce() {
             if (isSourceDirty) {
                 _triangles = source.Triangles;
-                _uv = source.Mesh.uv;
-                _uv2 = source.Mesh.uv2;
-                _uv3 = source.Mesh.uv3;
-                _uv4 = source.Mesh.uv4;
-                _uv5 = source.Mesh.uv5;
-                _uv6 = source.Mesh.uv6;
-                _uv7 = source.Mesh.uv7;
-                _uv8 = source.Mesh.uv8;
+                _uv = source.UV;
+                _uv2 = source.UV2;
+                _uv3 = source.UV3;
+                _uv4 = source.UV4;
+                _uv5 = source.UV5;
+                _uv6 = source.UV6;
+                _uv7 = source.UV7;
+                _uv8 = source.UV8;
                 _vertices = new Vector3[_sourceVertices.Length];
                 _normals = new Vector3[_sourceVertices.Length];
             }
@@ -269,14 +269,14 @@ namespace SplineMesh {
                 _normals = new Vector3[_sourceVertices.Length * repetitionCount];
                 
                 sourceTriangles = source.Triangles;
-                sourceUv = source.Mesh.uv; 
-                sourceUv2 = source.Mesh.uv2; 
-                sourceUv3 = source.Mesh.uv3; 
-                sourceUv4 = source.Mesh.uv4; 
-                sourceUv5 = source.Mesh.uv5; 
-                sourceUv6 = source.Mesh.uv6; 
-                sourceUv7 = source.Mesh.uv7; 
-                sourceUv8 = source.Mesh.uv8; 
+                sourceUv = source.UV;
+                sourceUv2 = source.UV2;
+                sourceUv3 = source.UV3;
+                sourceUv4 = source.UV4;
+                sourceUv5 = source.UV5;
+                sourceUv6 = source.UV6;
+                sourceUv7 = source.UV7;
+                sourceUv8 = source.UV8; 
                 _uv = new Vector2[sourceUv.Length * repetitionCount];
                 _uv2 = sourceUv2 != null ? new Vector2[sourceUv2.Length * repetitionCount] : null;
                 _uv3 = sourceUv3 != null ? new Vector2[sourceUv3.Length * repetitionCount] : null;
@@ -351,14 +351,14 @@ namespace SplineMesh {
         private void FillStretch() {
             if (isSourceDirty) {
                 _triangles = source.Triangles;
-                _uv = source.Mesh.uv;
-                _uv2 = source.Mesh.uv2;
-                _uv3 = source.Mesh.uv3;
-                _uv4 = source.Mesh.uv4;
-                _uv5 = source.Mesh.uv5;
-                _uv6 = source.Mesh.uv6;
-                _uv7 = source.Mesh.uv7;
-                _uv8 = source.Mesh.uv8;
+                _uv = source.UV;
+                _uv2 = source.UV2;
+                _uv3 = source.UV3;
+                _uv4 = source.UV4;
+                _uv5 = source.UV5;
+                _uv6 = source.UV6;
+                _uv7 = source.UV7;
+                _uv8 = source.UV8;
                 _vertices = new Vector3[_sourceVertices.Length];
                 _normals = new Vector3[_sourceVertices.Length];
                 _curveSamples = new CurveSample[_sourceVertices.Length];

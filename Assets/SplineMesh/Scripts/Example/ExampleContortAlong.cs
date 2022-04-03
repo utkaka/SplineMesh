@@ -73,9 +73,7 @@ namespace SplineMesh {
             meshBender = generated.GetComponent<MeshBender>();
             spline = GetComponent<Spline>();
 
-            meshBender.Source = SourceMesh.Build(mesh)
-                .Rotate(Quaternion.Euler(rotation))
-                .Scale(scale);
+            meshBender.Source = new SourceMesh(mesh, default(Vector3), Quaternion.Euler(rotation), scale);
             meshBender.Mode = MeshBender.FillingMode.Once;
             meshBender.SetInterval(spline, 0);
         }

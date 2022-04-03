@@ -122,10 +122,7 @@ namespace SplineMesh {
             res.GetComponent<MeshRenderer>().material = material;
             res.GetComponent<MeshCollider>().material = physicMaterial;
             MeshBender mb = res.GetComponent<MeshBender>();
-            mb.Source = SourceMesh.Build(mesh)
-                .Translate(translation)
-                .Rotate(Quaternion.Euler(rotation))
-                .Scale(scale);
+            mb.Source = new SourceMesh(mesh, translation, Quaternion.Euler(rotation), scale);
             mb.Mode = mode;
             return res;
         }
