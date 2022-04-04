@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace SplineMesh {
     /// <summary>
@@ -36,8 +33,8 @@ namespace SplineMesh {
                 node1.Scale = Vector2.one * (startScale + (endScale - startScale) * startRate);
                 node2.Scale = Vector2.one * (startScale + (endScale - startScale) * endRate);
 
-                node1.Roll = startRoll + (endRoll - startRoll) * startRate;
-                node2.Roll = startRoll + (endRoll - startRoll) * endRate;
+                node1.Roll = Mathf.Deg2Rad * (startRoll + (endRoll - startRoll) * startRate);
+                node2.Roll = Mathf.Deg2Rad * (startRoll + (endRoll - startRoll) * endRate);
 
                 spline.UpdateNode(i, node1);
                 spline.UpdateNode(i + 1, node2);

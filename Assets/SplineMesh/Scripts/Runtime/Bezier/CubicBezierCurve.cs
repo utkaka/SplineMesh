@@ -37,7 +37,7 @@ namespace SplineMesh {
             //Scale
             var scale = math.lerp(Node1.Scale, Node2.Scale, time);
             //Roll
-            var roll = math.lerp(Node1.Roll, Node2.Roll, time);
+            var roll = math.radians(math.lerp(Node1.Roll, Node2.Roll, time));
 
             Samples[i] = new CurveSample(
                 location,

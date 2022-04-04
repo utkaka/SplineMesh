@@ -27,13 +27,15 @@ namespace SplineMesh {
             // application of scale
             position = new float3(0.0f, position.y * curve.Scale.y, position.z * curve.Scale.x);
 
+            var rollAxisAngle = quaternion.AxisAngle(new float3(1.0f, 0.0f, 0.0f), curve.Roll);
+            
             // application of roll
-            position = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(curve.Roll)), position);
-            normal = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(curve.Roll)), normal);
+            position = math.mul(rollAxisAngle, position);
+            normal = math.mul(rollAxisAngle, normal);
             position.x = 0;
 
             // application of the rotation + location
-            var q =  math.mul(curve.Rotation, quaternion.Euler(0.0f, math.radians(-90.0f), 0.0f));
+            var q =  math.mul(curve.Rotation, quaternion.Euler(0.0f, -1.57079632679f, 0.0f));
             position = math.mul(q, position) + curve.Location;
             normal = math.mul(q, normal);
             
@@ -66,7 +68,7 @@ namespace SplineMesh {
                 if (!_rotation.Equals(quaternion.identity)) return _rotation;
                 var upVector = math.cross(Tangent,
                     math.normalize(math.cross(
-                        math.mul(quaternion.AxisAngle(new float3(0.0f, 0.0f, 1.0f), math.radians(Roll)), Up), Tangent)));
+                        math.mul(quaternion.AxisAngle(new float3(0.0f, 0.0f, 1.0f), Roll), Up), Tangent)));
                 _rotation = quaternion.LookRotationSafe(Tangent, upVector);
                 return _rotation;
             }
@@ -134,14 +136,14 @@ namespace SplineMesh {
             res.position = new float3(0.0f, res.position.y * Scale.y, res.position.z * Scale.x);
 
             // application of roll
-            res.position = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(Roll)), res.position);
-            res.normal = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(Roll)), res.normal);
+            res.position = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), Roll), res.position);
+            res.normal = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), Roll), res.normal);
 
             // reset X value
             res.position.x = 0;
 
             // application of the rotation + location
-            var q = math.mul(Rotation, quaternion.Euler(0, math.radians(-90.0f), 0));
+            var q = math.mul(Rotation, quaternion.Euler(0, -1.57079632679f, 0));
             res.position = math.mul(q, res.position) + Location;
             res.normal = math.mul(q, res.normal);
             return res;
