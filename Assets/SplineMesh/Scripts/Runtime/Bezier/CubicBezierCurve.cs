@@ -113,59 +113,6 @@ namespace SplineMesh {
             _isDirty = true;
         }
 
-        /// <summary>
-        /// Convinent method to get the third control point of the curve, as the direction of the end spline node indicates the starting tangent of the next curve.
-        /// </summary>
-        /// <returns></returns>
-        public float3 GetInverseDirection() {
-            return 2 * _node2.Position - _node2.Direction;
-        }
-
-        /// <summary>
-        /// Returns point on curve at given time. Time must be between 0 and 1.
-        /// </summary>
-        /// <param name="t"></param>
-        /// <returns></returns>
-        public float3 GetLocation(float t) {
-            var omt = 1f - t;
-            var omt2 = omt * omt;
-            var t2 = t * t;
-            return
-                _node1.Position * (omt2 * omt) +
-                _node1.Direction * (3f * omt2 * t) +
-                GetInverseDirection() * (3f * omt * t2) +
-                _node2.Position * (t2 * t);
-        }
-
-        /// <summary>
-        /// Returns tangent of curve at given time. Time must be between 0 and 1.
-        /// </summary>
-        /// <param name="t"></param>
-        /// <returns></returns>
-        public float3 GetTangent(float t) {
-            var omt = 1f - t;
-            var omt2 = omt * omt;
-            var t2 = t * t;
-            var tangent =
-                _node1.Position * -omt2 +
-                _node1.Direction * (3 * omt2 - 2 * omt) +
-                GetInverseDirection() * (-3 * t2 + 2 * t) +
-                _node2.Position * (t2);
-            return math.normalize(tangent);
-        }
-
-        public float3 GetUp(float t) {
-            return math.lerp(_node1.Up, _node2.Up, t);
-        }
-
-        public float2 GetScale(float t) {
-            return math.lerp(_node1.Scale, _node2.Scale, t);
-        }
-
-        public float GetRoll(float t) {
-            return math.lerp(_node1.Roll, _node2.Roll, t);
-        }
-
         public void ComputeSamples() {
             if (!_isDirty) return;
             samples ??= new CurveSample[STEP_COUNT + 1];
@@ -185,34 +132,10 @@ namespace SplineMesh {
                 if (i > 0) Length += Vector3.Distance(samples[i - 1].Location, samples[i].Location);
                 samples[i].DistanceInCurve = Length;
             }
-            
-            /*var previousPosition = GetLocation(0);
-            var index = 0;
-            Length = 0.0f;
-            for (float t = 0; t < 1; t += 1.0f / STEP_COUNT) {
-                var position = GetLocation(t);
-                Length += math.distance(previousPosition, position);
-                previousPosition = position;
-                samples[index++] = CreateSample(Length, t);
-            }
 
-            Length += math.distance(previousPosition, GetLocation(1));
-                samples[index] = CreateSample(Length, 1);*/
-                
             _isDirty = false;
             
             Changed?.Invoke();
-        }
-            
-        private CurveSample CreateSample(float distance, float time) {
-            return new CurveSample(
-                GetLocation(time),
-                GetTangent(time),
-                GetUp(time),
-                GetScale(time),
-                GetRoll(time),
-                distance,
-                time);
         }
 
         /// <summary>
@@ -249,20 +172,20 @@ namespace SplineMesh {
             if (d < 0 || d > Length)
                 throw new ArgumentException("Distance must be positive and less than curve length. Length = " + Length + ", given distance was " + d);
 
-            var previous = samples[0];
-            var next = default(CurveSample);
-            var found = false;
-            foreach (var cp in samples) {
-                if (cp.DistanceInCurve >= d) {
-                    next = cp;
-                    found = true;
-                    break;
-                }
-                previous = cp;
+            var nextIndex = -1;
+            for (var i = 0; i < samples.Length; i++) {
+                if (samples[i].DistanceInCurve < d) continue;
+                nextIndex = i;
+                break;
             }
-            if (!found) throw new Exception("Can't find curve samples.");
-            var t = next == previous ? 0 : (d - previous.DistanceInCurve) / (next.DistanceInCurve - previous.DistanceInCurve);
 
+            if (nextIndex == -1) throw new Exception("Can't find curve samples.");
+            if (nextIndex == 0) {
+                return samples[nextIndex];
+            }
+            var next = samples[nextIndex];
+            var previous = samples[nextIndex - 1];
+            var t = (d - previous.DistanceInCurve) / (next.DistanceInCurve - previous.DistanceInCurve);
             return CurveSample.Lerp(previous, next, t);
         }
 
