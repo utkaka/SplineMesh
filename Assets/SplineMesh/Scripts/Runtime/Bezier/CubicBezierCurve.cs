@@ -1,9 +1,54 @@
 ﻿using System;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace SplineMesh {
+    [BurstCompile]
+    public struct ComputeSamplesJob : IJobParallelFor {
+        public SplineNode Node1;
+        public SplineNode Node2;
+        [WriteOnly]
+        public NativeArray<CurveSample> Samples;
+
+        public void Execute(int i) {
+            var time = (float)i / CubicBezierCurve.STEP_COUNT;
+            //Location
+            var omt = 1f - time;
+            var omt2 = omt * omt;
+            var t2 = time * time;
+            var inverseDirection = 2 * Node2.Position - Node2.Direction;
+            var location = Node1.Position * (omt2 * omt) +
+                           Node1.Direction * (3f * omt2 * time) +
+                           inverseDirection * (3f * omt * t2) +
+                           Node2.Position * (t2 * time);
+            //Tangent
+            var tangent =
+                Node1.Position * -omt2 +
+                Node1.Direction * (3 * omt2 - 2 * omt) +
+                inverseDirection * (-3 * t2 + 2 * time) +
+                Node2.Position * t2;
+            tangent = math.normalize(tangent);
+            //Up
+            var up = math.lerp(Node1.Up, Node2.Up, time);
+            //Scale
+            var scale = math.lerp(Node1.Scale, Node2.Scale, time);
+            //Roll
+            var roll = math.lerp(Node1.Roll, Node2.Roll, time);
+
+            Samples[i] = new CurveSample(
+                location,
+                tangent,
+                up,
+                scale,
+                roll,
+                0.0f,
+                time);
+        }
+    }
     /// <summary>
     /// Mathematical object for cubic Bézier curve definition.
     /// It is made of two spline nodes which hold the four needed control points : two positions and two directions
@@ -13,10 +58,9 @@ namespace SplineMesh {
     /// </summary>
     [Serializable]
     public class CubicBezierCurve {
-        private const int STEP_COUNT = 30;
-        private const float T_STEP = 1.0f / STEP_COUNT;
+        public const int STEP_COUNT = 30;
 
-        private readonly CurveSample[] samples = new CurveSample[STEP_COUNT + 1];
+        private CurveSample[] samples;
         
         /// <summary>
         /// Event raised when the curve changes.
@@ -82,7 +126,7 @@ namespace SplineMesh {
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        private float3 GetLocation(float t) {
+        public float3 GetLocation(float t) {
             var omt = 1f - t;
             var omt2 = omt * omt;
             var t2 = t * t;
@@ -98,7 +142,7 @@ namespace SplineMesh {
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        private float3 GetTangent(float t) {
+        public float3 GetTangent(float t) {
             var omt = 1f - t;
             var omt2 = omt * omt;
             var t2 = t * t;
@@ -110,36 +154,56 @@ namespace SplineMesh {
             return math.normalize(tangent);
         }
 
-        private float3 GetUp(float t) {
+        public float3 GetUp(float t) {
             return math.lerp(_node1.Up, _node2.Up, t);
         }
 
-        private float2 GetScale(float t) {
+        public float2 GetScale(float t) {
             return math.lerp(_node1.Scale, _node2.Scale, t);
         }
 
-        private float GetRoll(float t) {
+        public float GetRoll(float t) {
             return math.lerp(_node1.Roll, _node2.Roll, t);
         }
 
         public void ComputeSamples() {
             if (!_isDirty) return;
+            samples ??= new CurveSample[STEP_COUNT + 1];
+            
+            var jobCurveSamples = new NativeArray<CurveSample>(STEP_COUNT + 1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var job = new ComputeSamplesJob {
+                Node1 = _node1,
+                Node2 = _node2,
+                Samples = jobCurveSamples,
+            };
+            job.Schedule(STEP_COUNT + 1, 4, default).Complete();
+            jobCurveSamples.CopyTo(samples);
+            jobCurveSamples.Dispose();
+            
             Length = 0;
-            var previousPosition = GetLocation(0);
+            for (var i = 0; i <= STEP_COUNT; i++) {
+                if (i > 0) Length += Vector3.Distance(samples[i - 1].Location, samples[i].Location);
+                samples[i].DistanceInCurve = Length;
+            }
+            
+            /*var previousPosition = GetLocation(0);
             var index = 0;
-            for (float t = 0; t < 1; t += T_STEP) {
+            Length = 0.0f;
+            for (float t = 0; t < 1; t += 1.0f / STEP_COUNT) {
                 var position = GetLocation(t);
                 Length += math.distance(previousPosition, position);
                 previousPosition = position;
                 samples[index++] = CreateSample(Length, t);
             }
+
             Length += math.distance(previousPosition, GetLocation(1));
-            samples[index] = CreateSample(Length, 1);
+                samples[index] = CreateSample(Length, 1);*/
+                
             _isDirty = false;
             
             Changed?.Invoke();
         }
-
+            
         private CurveSample CreateSample(float distance, float time) {
             return new CurveSample(
                 GetLocation(time),
@@ -161,8 +225,9 @@ namespace SplineMesh {
             var previous = samples[0];
             var next = default(CurveSample);
             var found = false;
+
             foreach (var cp in samples) {
-                if (cp.timeInCurve >= time) {
+                if (cp.TimeInCurve >= time) {
                     next = cp;
                     found = true;
                     break;
@@ -170,7 +235,7 @@ namespace SplineMesh {
                 previous = cp;
             }
             if (!found) throw new Exception("Can't find curve samples.");
-            var t = next == previous ? 0 : (time - previous.timeInCurve) / (next.timeInCurve - previous.timeInCurve);
+            var t = next == previous ? 0 : (time - previous.TimeInCurve) / (next.TimeInCurve - previous.TimeInCurve);
 
             return CurveSample.Lerp(previous, next, t);
         }
@@ -188,7 +253,7 @@ namespace SplineMesh {
             var next = default(CurveSample);
             var found = false;
             foreach (var cp in samples) {
-                if (cp.distanceInCurve >= d) {
+                if (cp.DistanceInCurve >= d) {
                     next = cp;
                     found = true;
                     break;
@@ -196,7 +261,7 @@ namespace SplineMesh {
                 previous = cp;
             }
             if (!found) throw new Exception("Can't find curve samples.");
-            var t = next == previous ? 0 : (d - previous.distanceInCurve) / (next.distanceInCurve - previous.distanceInCurve);
+            var t = next == previous ? 0 : (d - previous.DistanceInCurve) / (next.DistanceInCurve - previous.DistanceInCurve);
 
             return CurveSample.Lerp(previous, next, t);
         }
@@ -210,7 +275,7 @@ namespace SplineMesh {
             var closestIndex = -1;
             var i = 0;
             foreach (var sample in samples) {
-                var sqrDistance = ((Vector3)sample.location - pointToProject).sqrMagnitude;
+                var sqrDistance = ((Vector3)sample.Location - pointToProject).sqrMagnitude;
                 if (sqrDistance < minSqrDistance) {
                     minSqrDistance = sqrDistance;
                     closestIndex = i;
@@ -225,8 +290,8 @@ namespace SplineMesh {
                 previous = samples[closestIndex - 1];
                 next = samples[closestIndex];
             } else {
-                var toPreviousSample = (pointToProject - (Vector3)samples[closestIndex - 1].location).sqrMagnitude;
-                var toNextSample = (pointToProject - (Vector3)samples[closestIndex + 1].location).sqrMagnitude;
+                var toPreviousSample = (pointToProject - (Vector3)samples[closestIndex - 1].Location).sqrMagnitude;
+                var toNextSample = (pointToProject - (Vector3)samples[closestIndex + 1].Location).sqrMagnitude;
                 if (toPreviousSample < toNextSample) {
                     previous = samples[closestIndex - 1];
                     next = samples[closestIndex];
@@ -236,8 +301,8 @@ namespace SplineMesh {
                 }
             }
 
-            var onCurve = Vector3.Project(pointToProject - (Vector3)previous.location, (Vector3)next.location - (Vector3)previous.location) + (Vector3)previous.location;
-            var rate = (onCurve - (Vector3)previous.location).sqrMagnitude / ((Vector3)next.location - (Vector3)previous.location).sqrMagnitude;
+            var onCurve = Vector3.Project(pointToProject - (Vector3)previous.Location, (Vector3)next.Location - (Vector3)previous.Location) + (Vector3)previous.Location;
+            var rate = (onCurve - (Vector3)previous.Location).sqrMagnitude / ((Vector3)next.Location - (Vector3)previous.Location).sqrMagnitude;
             rate = math.clamp(rate, 0, 1);
             var result = CurveSample.Lerp(previous, next, rate);
             return result;

@@ -198,7 +198,7 @@ namespace SplineMesh {
                     var bent = sample.GetBent(new MeshVertex(
                         new Vector3(0, v.point.y, -v.point.x),
                         new Vector3(0, v.normal.y, -v.normal.x),
-                        new Vector2(v.uCoord, textureScale * (sample.distanceInCurve + textureOffset))));
+                        new Vector2(v.uCoord, textureScale * (sample.DistanceInCurve + textureOffset))));
                     var vertexIndex = i * vertsInShape + j;
                     _vertices[vertexIndex] = bent.position;
                     _normals[vertexIndex] = bent.normal;

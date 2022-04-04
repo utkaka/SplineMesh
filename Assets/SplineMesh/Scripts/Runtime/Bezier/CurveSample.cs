@@ -20,25 +20,26 @@ namespace SplineMesh {
         public void Execute(int i) {
             var curve = Curves[i];
             var vertexIn = VerticesIn[i];
-            
-            var bent = new MeshVertex(vertexIn.position, vertexIn.normal, vertexIn.uv);
+
+            var position = vertexIn.position;
+            var normal = vertexIn.normal;
             
             // application of scale
-            bent.position = new float3(0.0f, bent.position.y * curve.scale.y, bent.position.z * curve.scale.x);
+            position = new float3(0.0f, position.y * curve.Scale.y, position.z * curve.Scale.x);
 
             // application of roll
-            bent.position = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(curve.roll)), bent.position);
-            bent.normal = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(curve.roll)), bent.normal);
-            bent.position.x = 0;
+            position = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(curve.Roll)), position);
+            normal = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(curve.Roll)), normal);
+            position.x = 0;
 
             // application of the rotation + location
             var q =  math.mul(curve.Rotation, quaternion.Euler(0.0f, math.radians(-90.0f), 0.0f));
-            bent.position = math.mul(q, bent.position) + curve.location;
-            bent.normal = math.mul(q, bent.normal);
+            position = math.mul(q, position) + curve.Location;
+            normal = math.mul(q, normal);
             
 
-            VerticesOut[i] = bent.position;
-            NormalsOut[i] = bent.normal;
+            VerticesOut[i] = position;
+            NormalsOut[i] = normal;
             
         }
     }
@@ -47,49 +48,49 @@ namespace SplineMesh {
     /// </summary>
     public struct CurveSample
     {
-        public readonly float3 location;
-        public readonly float3 tangent;
-        public readonly float3 up;
-        public readonly float2 scale;
-        public readonly float roll;
-        public readonly float distanceInCurve;
-        public readonly float timeInCurve;
+        public readonly float3 Location;
+        public readonly float3 Tangent;
+        public readonly float3 Up;
+        public readonly float2 Scale;
+        public readonly float Roll;
+        public readonly float TimeInCurve;
+        
+        public float DistanceInCurve;
 
-        private quaternion rotation;
-
+        private quaternion _rotation;
         /// <summary>
         /// Rotation is a look-at quaternion calculated from the tangent, roll and up vector. Mixing non zero roll and custom up vector is not advised.
         /// </summary>
         public quaternion Rotation {
             get {
-                if (!rotation.Equals(quaternion.identity)) return rotation;
-                var upVector = math.cross(tangent,
+                if (!_rotation.Equals(quaternion.identity)) return _rotation;
+                var upVector = math.cross(Tangent,
                     math.normalize(math.cross(
-                        math.mul(quaternion.AxisAngle(new float3(0.0f, 0.0f, 1.0f), math.radians(roll)), up), tangent)));
-                rotation = quaternion.LookRotationSafe(tangent, upVector);
-                return rotation;
+                        math.mul(quaternion.AxisAngle(new float3(0.0f, 0.0f, 1.0f), math.radians(Roll)), Up), Tangent)));
+                _rotation = quaternion.LookRotationSafe(Tangent, upVector);
+                return _rotation;
             }
         }
 
         public CurveSample(float3 location, float3 tangent, float3 up, float2 scale, float roll, float distanceInCurve, float timeInCurve) {
-            this.location = location;
-            this.tangent = tangent;
-            this.up = up;
-            this.roll = roll;
-            this.scale = scale;
-            this.distanceInCurve = distanceInCurve;
-            this.timeInCurve = timeInCurve;
-            rotation = Quaternion.identity;
+            Location = location;
+            Tangent = tangent;
+            Up = up;
+            Roll = roll;
+            Scale = scale;
+            DistanceInCurve = distanceInCurve;
+            TimeInCurve = timeInCurve;
+            _rotation = quaternion.identity;
         }
 
         public bool Equals(CurveSample other) {
-            return math.all(location == other.location) &&
-                   math.all(tangent == other.tangent) &&
-                   math.all(up == other.up) &&
-                   math.all(scale == other.scale) &&
-                   math.abs(roll - other.roll) < float.Epsilon &&
-                   math.abs(distanceInCurve - other.distanceInCurve) < float.Epsilon &&
-                   math.abs(timeInCurve - other.timeInCurve) < float.Epsilon;
+            return math.all(Location == other.Location) &&
+                   math.all(Tangent == other.Tangent) &&
+                   math.all(Up == other.Up) &&
+                   math.all(Scale == other.Scale) &&
+                   math.abs(Roll - other.Roll) < float.Epsilon &&
+                   math.abs(DistanceInCurve - other.DistanceInCurve) < float.Epsilon &&
+                   math.abs(TimeInCurve - other.TimeInCurve) < float.Epsilon;
         }
 
         public override bool Equals(object obj) {
@@ -97,7 +98,7 @@ namespace SplineMesh {
         }
 
         public override int GetHashCode() {
-            return HashCode.Combine(location, tangent, up, scale, roll, distanceInCurve, timeInCurve);
+            return HashCode.Combine(Location, Tangent, Up, Scale, Roll, DistanceInCurve, TimeInCurve);
         }
 
         public static bool operator ==(CurveSample cs1, CurveSample cs2) {
@@ -117,31 +118,31 @@ namespace SplineMesh {
         /// <returns></returns>
         public static CurveSample Lerp(CurveSample a, CurveSample b, float t) {
             return new CurveSample(
-                math.lerp(a.location, b.location, t),
-                math.normalize(math.lerp(a.tangent, b.tangent, t)),
-                math.lerp(a.up, b.up, t),
-                math.lerp(a.scale, b.scale, t),
-                math.lerp(a.roll, b.roll, t),
-                math.lerp(a.distanceInCurve, b.distanceInCurve, t),
-                math.lerp(a.timeInCurve, b.timeInCurve, t));
+                math.lerp(a.Location, b.Location, t),
+                math.normalize(math.lerp(a.Tangent, b.Tangent, t)),
+                math.lerp(a.Up, b.Up, t),
+                math.lerp(a.Scale, b.Scale, t),
+                math.lerp(a.Roll, b.Roll, t),
+                math.lerp(a.DistanceInCurve, b.DistanceInCurve, t),
+                math.lerp(a.TimeInCurve, b.TimeInCurve, t));
         }
 
         public MeshVertex GetBent(MeshVertex vert) {
             var res = new MeshVertex(vert.position, vert.normal, vert.uv);
 
             // application of scale
-            res.position = new float3(0.0f, res.position.y * scale.y, res.position.z * scale.x);
+            res.position = new float3(0.0f, res.position.y * Scale.y, res.position.z * Scale.x);
 
             // application of roll
-            res.position = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(roll)), res.position);
-            res.normal = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(roll)), res.normal);
+            res.position = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(Roll)), res.position);
+            res.normal = math.mul(quaternion.AxisAngle(new float3(1.0f, 0.0f ,0.0f), math.radians(Roll)), res.normal);
 
             // reset X value
             res.position.x = 0;
 
             // application of the rotation + location
             var q = math.mul(Rotation, quaternion.Euler(0, math.radians(-90.0f), 0));
-            res.position = math.mul(q, res.position) + location;
+            res.position = math.mul(q, res.position) + Location;
             res.normal = math.mul(q, res.normal);
             return res;
         }

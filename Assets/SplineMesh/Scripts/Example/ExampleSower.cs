@@ -78,7 +78,7 @@ namespace SplineMesh {
                 go.transform.localScale = Vector3.one;
 
                 // move along spline, according to spacing + random
-                go.transform.localPosition = sample.location;
+                go.transform.localPosition = sample.Location;
                 // apply scale + random
                 float rangedScale = scale + UnityEngine.Random.Range(0, scaleRange);
                 go.transform.localScale = new Vector3(rangedScale, rangedScale, rangedScale);
@@ -89,9 +89,9 @@ namespace SplineMesh {
                     go.transform.rotation = sample.Rotation;
                 }
                 // move orthogonaly to the spline, according to offset + random
-                var binormal = (Quaternion.LookRotation(sample.tangent, sample.up) * Vector3.right).normalized;
+                var binormal = (Quaternion.LookRotation(sample.Tangent, sample.Up) * Vector3.right).normalized;
                 var localOffset = offset + UnityEngine.Random.Range(0, offsetRange * Math.Sign(offset));
-                localOffset *=  sample.scale.x;
+                localOffset *=  sample.Scale.x;
                 binormal *= localOffset;
                 go.transform.position += binormal;
 

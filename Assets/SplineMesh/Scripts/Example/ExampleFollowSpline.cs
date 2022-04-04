@@ -51,7 +51,7 @@ namespace SplineMesh {
         private void PlaceFollower() {
             if (generated != null) {
                 CurveSample sample = spline.GetSample(rate);
-                generated.transform.localPosition = sample.location;
+                generated.transform.localPosition = sample.Location;
                 generated.transform.localRotation = sample.Rotation;
             }
         }

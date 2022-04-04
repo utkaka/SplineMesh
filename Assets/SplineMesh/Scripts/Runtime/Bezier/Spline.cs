@@ -86,15 +86,12 @@ namespace SplineMesh {
 
         private IEnumerator ComputeCurves() {
             yield return Application.isEditor ? null : new WaitForEndOfFrame();
-            foreach (var curve in _curves) {
-                curve.ComputeSamples();
-            }
-            
             _length = 0;
-            foreach (var curve in _curves) {
+            for (var i = 0; i < _curves.Count; i++) {
+                var curve = _curves[i];
+                curve.ComputeSamples();
                 _length += curve.Length;
             }
-            
             _computeCoroutine = null;
             Changed?.Invoke();
         }
@@ -239,10 +236,10 @@ namespace SplineMesh {
                 var projection = curve.GetProjectionSample(pointToProject);
                 if (curve == _curves[0]) {
                     closest = projection;
-                    minSqrDistance = ((Vector3)projection.location - pointToProject).sqrMagnitude;
+                    minSqrDistance = ((Vector3)projection.Location - pointToProject).sqrMagnitude;
                     continue;
                 }
-                var sqrDist = ((Vector3)projection.location - pointToProject).sqrMagnitude;
+                var sqrDist = ((Vector3)projection.Location - pointToProject).sqrMagnitude;
                 if (sqrDist < minSqrDistance) {
                     minSqrDistance = sqrDist;
                     closest = projection;

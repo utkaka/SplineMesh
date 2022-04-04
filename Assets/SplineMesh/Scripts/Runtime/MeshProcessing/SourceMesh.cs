@@ -18,6 +18,8 @@ namespace SplineMesh {
         private Quaternion _rotation;
         private Vector3 _scale;
 
+        private Dictionary<float, List<int>> _sampleGroups;
+
         private Vector2[] _uv;
         private Vector2[] _uv2;
         private Vector2[] _uv3;
@@ -26,7 +28,9 @@ namespace SplineMesh {
         private Vector2[] _uv6;
         private Vector2[] _uv7;
         private Vector2[] _uv8;
-        
+
+        internal Dictionary<float, List<int>> SampleGroups => _sampleGroups;
+
         internal MeshVertex[] Vertices { get; private set; }
         internal int[] Triangles { get; private set; }
 
@@ -58,6 +62,8 @@ namespace SplineMesh {
         }
 
         private void BuildData(Mesh mesh) {
+            _sampleGroups = new Dictionary<float, List<int>>();
+            
             _uv = mesh.uv;
             _uv2 = mesh.uv2;
             _uv3 = mesh.uv3;
@@ -74,12 +80,16 @@ namespace SplineMesh {
             if (_scale.z < 0) reversed = !reversed;
             Triangles = reversed ? MeshUtility.GetReversedTriangles(mesh) : mesh.triangles;
 
+            // find the bounds along x
+            MinX = float.MaxValue;
+            var maxX = float.MinValue;
             // we transform the source mesh vertices according to rotation/translation/scale
-            var i = 0;
             Vertices = new MeshVertex[mesh.vertexCount];
-            for (var index = 0; index < mesh.vertices.Length; index++) {
-                var vert = mesh.vertices[index];
-                var transformed = new MeshVertex(vert, mesh.normals[i++]);
+            var meshVertices = mesh.vertices;
+            var meshNormals = mesh.normals;
+            for (var i = 0; i < Vertices.Length; i++) {
+                var vert = meshVertices[i];
+                var transformed = new MeshVertex(vert, meshNormals[i]);
                 //  application of rotation
                 if (_rotation != Quaternion.identity) {
                     transformed.position = _rotation * transformed.position;
@@ -95,18 +105,24 @@ namespace SplineMesh {
                     transformed.position = (Vector3) transformed.position + _translation;
                 }
 
-                Vertices[index] = transformed;
-            }
-
-            // find the bounds along x
-            MinX = float.MaxValue;
-            var maxX = float.MinValue;
-            foreach (var vert in Vertices) {
-                Vector3 p = vert.position;
-                maxX = Math.Max(maxX, p.x);
-                MinX = Math.Min(MinX, p.x);
+                Vertices[i] = transformed;
+                
+                maxX = Math.Max(maxX, transformed.position.x);
+                MinX = Math.Min(MinX, transformed.position.x);
             }
             Length = Math.Abs(maxX - MinX);
+
+            for (var i = 0; i <Vertices.Length; i++) {
+                var distanceRate = Length == 0 ? 0 : Math.Abs(Vertices[i].position.x - MinX) / Length;
+                if (!_sampleGroups.TryGetValue(distanceRate, out var group)) {
+                    group = new List<int>();
+                    _sampleGroups[distanceRate] = group;
+                }
+                group.Add(i);
+            }
+            
+
+            //
         }
     }
 }

@@ -214,8 +214,7 @@ namespace SplineMesh {
             for (var i = 0; i < _sourceVertices.Length; i++) {
                 var vert = _sourceVertices[i];
                 var distance = vert.position.x - source.MinX;
-                CurveSample sample;
-                if (!sampleCache.TryGetValue(distance, out sample)) {
+                if (!sampleCache.TryGetValue(distance, out var sample)) {
                     if (!useSpline) {
                         if (distance > curve.Length) distance = curve.Length;
                         sample = curve.GetSampleAtDistance(distance);
@@ -369,27 +368,26 @@ namespace SplineMesh {
             var jobVerticesOut = new NativeArray<float3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var jobNormalsOut = new NativeArray<float3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var jobCurveSamples = new NativeArray<CurveSample>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            
-            for (var i = 0; i < _sourceVertices.Length; i++) {
-                var vert = _sourceVertices[i];
-                var distanceRate = source.Length == 0 ? 0 : Math.Abs(vert.position.x - source.MinX) / source.Length;
-                if (!sampleCache.TryGetValue(distanceRate, out var sample)) {
-                    if (!useSpline) {
-                        sample = curve.GetSampleAtDistance(curve.Length * distanceRate);
-                    } else {
-                        var intervalLength =
-                            intervalEnd == 0 ? spline.Length - intervalStart : intervalEnd - intervalStart;
-                        var distOnSpline = intervalStart + intervalLength * distanceRate;
-                        if (distOnSpline > spline.Length) {
-                            distOnSpline = spline.Length;
-                        }
 
-                        sample = spline.GetSampleAtDistance(distOnSpline);
+            foreach (var distanceRate in source.SampleGroups.Keys) {
+                CurveSample sample;
+                if (!useSpline) {
+                    sample = curve.GetSampleAtDistance(curve.Length * distanceRate);
+                } else {
+                    var intervalLength =
+                        intervalEnd == 0 ? spline.Length - intervalStart : intervalEnd - intervalStart;
+                    var distOnSpline = intervalStart + intervalLength * distanceRate;
+                    if (distOnSpline > spline.Length) {
+                        distOnSpline = spline.Length;
                     }
-                    sampleCache[distanceRate] = sample;
+                    sample = spline.GetSampleAtDistance(distOnSpline);
                 }
 
-                _curveSamples[i] = sample;
+                var sampleGroup = source.SampleGroups[distanceRate];
+
+                for (var i = 0; i < sampleGroup.Count; i++) {
+                    _curveSamples[sampleGroup[i]] = sample;
+                }
             }
             
             jobVerticesIn.CopyFrom(_sourceVertices);
