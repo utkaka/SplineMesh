@@ -8,6 +8,23 @@ using UnityEngine.Serialization;
 
 namespace SplineMesh {
     [BurstCompile]
+    public struct ComputeCurveLengthJob : IJob {
+        public NativeArray<CurveSample> Samples;
+        public NativeArray<float> Length;
+        public void Execute() {
+            var length = 0.0f;
+            for (var i = 0; i <= CubicBezierCurve.STEP_COUNT; i++) {
+                var sample = Samples[i];
+                if (i > 0) length += math.distance(Samples[i - 1].Location, sample.Location);
+                sample.DistanceInCurve = length;
+                Samples[i] = sample;
+            }
+
+            Length[0] = length;
+        }
+    }
+
+    [BurstCompile]
     public struct ComputeSamplesJob : IJobParallelFor {
         public SplineNode Node1;
         public SplineNode Node2;
@@ -75,10 +92,12 @@ namespace SplineMesh {
         private SplineNode _node2;
 
         private bool _isDirty;
+        private float _length;
+
         /// <summary>
         /// Length of the curve in world unit.
         /// </summary>
-        public float Length { get; private set; }
+        public float Length => _length;
 
         /// <summary>
         /// Build a new cubic Bézier curve between two given spline node.
@@ -123,15 +142,27 @@ namespace SplineMesh {
                 Node2 = _node2,
                 Samples = jobCurveSamples,
             };
-            job.Schedule(STEP_COUNT + 1, 4, default).Complete();
+            var jobHandle = job.Schedule(STEP_COUNT + 1, 4, default);
+            
+            var jobLength = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+            var computeCurveLengthJob = new ComputeCurveLengthJob {
+                Samples = jobCurveSamples,
+                Length = jobLength
+            };
+            
+            computeCurveLengthJob.Schedule(jobHandle).Complete();
+                
+            _length = jobLength[0];
             jobCurveSamples.CopyTo(samples);
             jobCurveSamples.Dispose();
-            
-            Length = 0;
+            jobLength.Dispose();
+
+            /*Length = 0;
             for (var i = 0; i <= STEP_COUNT; i++) {
                 if (i > 0) Length += Vector3.Distance(samples[i - 1].Location, samples[i].Location);
                 samples[i].DistanceInCurve = Length;
-            }
+            }*/
 
             _isDirty = false;
             
