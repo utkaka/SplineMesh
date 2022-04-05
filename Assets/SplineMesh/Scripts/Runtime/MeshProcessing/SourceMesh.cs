@@ -18,7 +18,8 @@ namespace SplineMesh {
         private Quaternion _rotation;
         private Vector3 _scale;
 
-        private Dictionary<float, List<int>> _sampleGroups;
+        private float[] _sampleGroups;
+        private int[] _verticesToSampleGroups;
 
         private Vector2[] _uv;
         private Vector2[] _uv2;
@@ -29,7 +30,8 @@ namespace SplineMesh {
         private Vector2[] _uv7;
         private Vector2[] _uv8;
 
-        internal Dictionary<float, List<int>> SampleGroups => _sampleGroups;
+        internal float[] SampleGroups => _sampleGroups;
+        internal int[] VerticesToSampleGroups => _verticesToSampleGroups;
 
         internal MeshVertex[] Vertices { get; private set; }
         internal int[] Triangles { get; private set; }
@@ -62,8 +64,6 @@ namespace SplineMesh {
         }
 
         private void BuildData(Mesh mesh) {
-            _sampleGroups = new Dictionary<float, List<int>>();
-            
             _uv = mesh.uv;
             _uv2 = mesh.uv2;
             _uv3 = mesh.uv3;
@@ -111,17 +111,28 @@ namespace SplineMesh {
                 MinX = Math.Min(MinX, transformed.position.x);
             }
             Length = Math.Abs(maxX - MinX);
+            
+            var tempSampleGroups = new Dictionary<float, List<int>>();
 
             for (var i = 0; i <Vertices.Length; i++) {
                 var distanceRate = Length == 0 ? 0 : Math.Abs(Vertices[i].position.x - MinX) / Length;
-                if (!_sampleGroups.TryGetValue(distanceRate, out var group)) {
+                if (!tempSampleGroups.TryGetValue(distanceRate, out var group)) {
                     group = new List<int>();
-                    _sampleGroups[distanceRate] = group;
+                    tempSampleGroups[distanceRate] = group;
                 }
                 group.Add(i);
             }
-            
 
+            _sampleGroups = new float[tempSampleGroups.Count];
+            _verticesToSampleGroups = new int[Vertices.Length];
+
+            var index = 0;
+            foreach (var sampleGroup in tempSampleGroups.Keys) {
+                foreach (var vertice in tempSampleGroups[sampleGroup]) {
+                    _verticesToSampleGroups[vertice] = index;
+                }
+                _sampleGroups[index++] = sampleGroup;
+            }
             //
         }
     }

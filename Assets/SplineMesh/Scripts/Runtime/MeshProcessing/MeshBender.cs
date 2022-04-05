@@ -24,10 +24,10 @@ namespace SplineMesh {
         private Spline spline;
         private float intervalStart, intervalEnd;
         private CubicBezierCurve curve;
+        private CurveSamplesLerpPair[] _curveSamplesLerpPairs;
         private Dictionary<float, CurveSample> sampleCache = new Dictionary<float, CurveSample>();
         
         private MeshVertex[] _sourceVertices;
-        private CurveSample[] _curveSamples;
         private int[] _triangles;
         private Vector3[] _vertices;
         private Vector3[] _normals;
@@ -217,7 +217,7 @@ namespace SplineMesh {
                 if (!sampleCache.TryGetValue(distance, out var sample)) {
                     if (!useSpline) {
                         if (distance > curve.Length) distance = curve.Length;
-                        sample = curve.GetSampleAtDistance(distance);
+                        sample = curve.GetSampleAtDistance(distance).Lerp();
                     } else {
                         var distOnSpline = intervalStart + distance;
                         if (distOnSpline > spline.Length) {
@@ -230,7 +230,7 @@ namespace SplineMesh {
                             }
                         }
 
-                        sample = spline.GetSampleAtDistance(distOnSpline);
+                        sample = spline.GetSampleAtDistance(distOnSpline).Lerp();
                     }
 
                     sampleCache[distance] = sample;
@@ -299,7 +299,7 @@ namespace SplineMesh {
                     if (!sampleCache.TryGetValue(distance, out var sample)) {
                         if (!useSpline) {
                             if (distance > curve.Length) continue;
-                            sample = curve.GetSampleAtDistance(distance);
+                            sample = curve.GetSampleAtDistance(distance).Lerp();
                         } else {
                             var distOnSpline = intervalStart + distance;
                             //if (true) { //spline.isLoop) {
@@ -310,7 +310,7 @@ namespace SplineMesh {
                             //} else if (distOnSpline > spline.Length) {
                             //    continue;
                             //}
-                            sample = spline.GetSampleAtDistance(distOnSpline);
+                            sample = spline.GetSampleAtDistance(distOnSpline).Lerp();
                         }
 
                         sampleCache[distance] = sample;
@@ -360,19 +360,25 @@ namespace SplineMesh {
                 _uv8 = source.UV8;
                 _vertices = new Vector3[_sourceVertices.Length];
                 _normals = new Vector3[_sourceVertices.Length];
-                _curveSamples = new CurveSample[_sourceVertices.Length];
+                _curveSamplesLerpPairs = new CurveSamplesLerpPair[source.SampleGroups.Length];
             }
-            sampleCache.Clear();
             
             var jobVerticesIn = new NativeArray<MeshVertex>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var jobVerticesOut = new NativeArray<float3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var jobNormalsOut = new NativeArray<float3>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var jobCurveSamples = new NativeArray<CurveSample>(_sourceVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            
+            var jobCurveSamplesLerpPairs = new NativeArray<CurveSamplesLerpPair>(source.SampleGroups.Length, Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            var sampleGroupsNativeArray = new NativeArray<CurveSample>(source.SampleGroups.Length,
+                Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var verticesToSampleGroupsNativeArray = new NativeArray<int>(_sourceVertices.Length,
+                Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-            foreach (var distanceRate in source.SampleGroups.Keys) {
-                CurveSample sample;
+            for (var i = 0; i < source.SampleGroups.Length; i++) {
+                var distanceRate = source.SampleGroups[i];
                 if (!useSpline) {
-                    sample = curve.GetSampleAtDistance(curve.Length * distanceRate);
+                    _curveSamplesLerpPairs[i] = curve.GetSampleAtDistance(curve.Length * distanceRate);
                 } else {
                     var intervalLength =
                         intervalEnd == 0 ? spline.Length - intervalStart : intervalEnd - intervalStart;
@@ -380,26 +386,37 @@ namespace SplineMesh {
                     if (distOnSpline > spline.Length) {
                         distOnSpline = spline.Length;
                     }
-                    sample = spline.GetSampleAtDistance(distOnSpline);
-                }
 
-                var sampleGroup = source.SampleGroups[distanceRate];
-
-                for (var i = 0; i < sampleGroup.Count; i++) {
-                    _curveSamples[sampleGroup[i]] = sample;
+                    _curveSamplesLerpPairs[i] = spline.GetSampleAtDistance(distOnSpline);
                 }
             }
-            
+
+            jobCurveSamplesLerpPairs.CopyFrom(_curveSamplesLerpPairs);
+            verticesToSampleGroupsNativeArray.CopyFrom(source.VerticesToSampleGroups);
+
+            var jobCurveSamplesLerp = new CurveSamplesLerpJob {
+                CurveSamplesPairs = jobCurveSamplesLerpPairs,
+                Results = sampleGroupsNativeArray
+            };
+            var jobHandle = jobCurveSamplesLerp.Schedule(_curveSamplesLerpPairs.Length, 8, default);
+
+            var curveSamplesGroupsJob = new CurveSamplesGroupsJob {
+                CurveSampleGroups = sampleGroupsNativeArray,
+                VerticesToSampleGroups = verticesToSampleGroupsNativeArray,
+                Result = jobCurveSamples
+            };
+
+            jobHandle = curveSamplesGroupsJob.Schedule(_sourceVertices.Length, 8, jobHandle);
+
             jobVerticesIn.CopyFrom(_sourceVertices);
-            jobCurveSamples.CopyFrom(_curveSamples);
-            
+
             var job = new CurveSampleBentJob {
                 Curves = jobCurveSamples,
                 VerticesIn = jobVerticesIn,
                 VerticesOut = jobVerticesOut,
                 NormalsOut = jobNormalsOut
             };
-            job.Schedule(_sourceVertices.Length, 4, default).Complete();
+            job.Schedule(_sourceVertices.Length, 8, jobHandle).Complete();
             
             jobVerticesOut.Reinterpret<Vector3>().CopyTo(_vertices);
             jobNormalsOut.Reinterpret<Vector3>().CopyTo(_normals);
@@ -408,6 +425,9 @@ namespace SplineMesh {
             jobVerticesIn.Dispose();
             jobVerticesOut.Dispose();
             jobNormalsOut.Dispose();
+            jobCurveSamplesLerpPairs.Dispose();
+            sampleGroupsNativeArray.Dispose();
+            verticesToSampleGroupsNativeArray.Dispose();
 
             MeshUtility.Update(result,
                 _triangles,

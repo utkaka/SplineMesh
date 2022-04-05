@@ -203,7 +203,7 @@ namespace SplineMesh {
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        public CurveSample GetSample(float t) {
+        public CurveSamplesLerpPair GetSample(float t) {
             var index = GetNodeIndexForTime(t);
             return _curves[index].GetSample(t - index);
         }
@@ -229,8 +229,8 @@ namespace SplineMesh {
             return res;
         }
 
-        public CurveSample GetProjectionSample(Vector3 pointToProject) {
-            var closest = default(CurveSample);
+        /*public CurveSamplesLerpPair GetProjectionSample(Vector3 pointToProject) {
+            var closest = default(CurveSamplesLerpPair);
             var minSqrDistance = float.MaxValue;
             foreach (var curve in _curves) {
                 var projection = curve.GetProjectionSample(pointToProject);
@@ -246,7 +246,7 @@ namespace SplineMesh {
                 }
             }
             return closest;
-        }
+        }*/
         
         /// <summary>
         /// Returns an interpolated sample of the spline, containing all curve data at this distance.
@@ -254,7 +254,7 @@ namespace SplineMesh {
         /// </summary>
         /// <param name="d"></param>
         /// <returns></returns>
-        public CurveSample GetSampleAtDistance(float d) {
+        public CurveSamplesLerpPair GetSampleAtDistance(float d) {
             if (d < 0 || d > _length)
                 throw new ArgumentException(
                     $"Distance must be between 0 and spline length ({_length}). Given distance was {d}.");

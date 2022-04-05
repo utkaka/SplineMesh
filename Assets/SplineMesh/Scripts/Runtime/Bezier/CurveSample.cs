@@ -1,12 +1,12 @@
 ﻿using System;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace SplineMesh {
-    [BurstCompile]
+    [BurstCompile(FloatMode = FloatMode.Fast)]
     public struct CurveSampleBentJob : IJobParallelFor {
         [ReadOnly]
         public NativeArray<CurveSample> Curves;
@@ -118,7 +118,7 @@ namespace SplineMesh {
         /// <param name="b"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        public static CurveSample Lerp(CurveSample a, CurveSample b, float t) {
+        /*public static CurveSample Lerp(CurveSample a, CurveSample b, float t) {
             return new CurveSample(
                 math.lerp(a.Location, b.Location, t),
                 math.normalize(math.lerp(a.Tangent, b.Tangent, t)),
@@ -127,7 +127,7 @@ namespace SplineMesh {
                 math.lerp(a.Roll, b.Roll, t),
                 math.lerp(a.DistanceInCurve, b.DistanceInCurve, t),
                 math.lerp(a.TimeInCurve, b.TimeInCurve, t));
-        }
+        }*/
 
         public MeshVertex GetBent(MeshVertex vert) {
             var res = new MeshVertex(vert.position, vert.normal, vert.uv);

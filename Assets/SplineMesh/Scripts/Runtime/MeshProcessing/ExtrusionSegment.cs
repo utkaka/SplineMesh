@@ -163,18 +163,18 @@ namespace SplineMesh {
                 // calculate path from spline interval
                 var d = intervalStart;
                 while (d < intervalEnd) {
-                    path.Add(spline.GetSampleAtDistance(d));
+                    path.Add(spline.GetSampleAtDistance(d).Lerp());
                     d += sampleSpacing;
                 }
-                path.Add(spline.GetSampleAtDistance(intervalEnd));
+                path.Add(spline.GetSampleAtDistance(intervalEnd).Lerp());
             } else {
                 // calculate path in a curve
                 float d = 0;
                 while (d < curve.Length) {
-                    path.Add(curve.GetSampleAtDistance(d));
+                    path.Add(curve.GetSampleAtDistance(d).Lerp());
                     d += sampleSpacing;
                 }
-                path.Add(curve.GetSampleAtDistance(curve.Length));
+                path.Add(curve.GetSampleAtDistance(curve.Length).Lerp());
             }
             return path;
         }

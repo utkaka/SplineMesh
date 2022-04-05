@@ -69,7 +69,7 @@ namespace SplineMesh {
 
             float distance = 0;
             while (distance <= spline.Length) {
-                CurveSample sample = spline.GetSampleAtDistance(distance);
+                var sample = spline.GetSampleAtDistance(distance).Lerp();
 
                 GameObject go;
                 go = Instantiate(prefab, generated.transform);
