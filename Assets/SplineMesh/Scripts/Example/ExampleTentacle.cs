@@ -20,6 +20,7 @@ namespace SplineMesh {
         public float startRoll = 0, endRoll = 0;
 
         private void OnValidate() {
+            //
             // apply scale and roll at each node
             float currentLength = 0;
             for (var i = 0; i < spline.Curves.Count; i++) {

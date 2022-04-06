@@ -26,6 +26,8 @@ namespace SplineMesh {
         public Vector3 scale;
 
         public float DurationInSecond;
+        [SerializeField]
+        private bool _useTangents;
 
         private void OnEnable() {
             rate = 0;
@@ -73,6 +75,7 @@ namespace SplineMesh {
             meshBender = generated.GetComponent<MeshBender>();
             spline = GetComponent<Spline>();
 
+            meshBender.SetUseTangents(_useTangents);
             meshBender.Source = new SourceMesh(mesh, default(Vector3), Quaternion.Euler(rotation), scale);
             meshBender.Mode = MeshBender.FillingMode.Once;
             meshBender.SetInterval(spline, 0);

@@ -31,6 +31,9 @@ namespace SplineMesh {
 
         public float DurationInSecond;
 
+        [SerializeField]
+        private bool _useTangents;
+
         private void OnEnable() {
             rate = 0;
             Init();
@@ -92,7 +95,7 @@ namespace SplineMesh {
 
             meshBender = generated.GetComponent<MeshBender>();
             spline = GetComponent<Spline>();
-
+            meshBender.SetUseTangents(_useTangents);
             meshBender.Source = new SourceMesh(mesh, default, Quaternion.Euler(rotation), scale);
             meshBender.Mode = MeshBender.FillingMode.StretchToInterval;
             meshBender.SetInterval(spline, 0, 0.01f);

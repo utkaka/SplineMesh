@@ -200,17 +200,13 @@ namespace SplineMesh {
         /// <param name="d"></param>
         /// <returns></returns>
         public CurveSamplesLerpPair GetSampleAtDistance(float d) {
-            if (d < 0 || d > Length)
-                throw new ArgumentException("Distance must be positive and less than curve length. Length = " + Length + ", given distance was " + d);
-
             var nextIndex = -1;
-            for (var i = 0; i < samples.Length; i++) {
+            var samplesCount = samples.Length;
+            for (var i = 0; i < samplesCount; i++) {
                 if (samples[i].DistanceInCurve < d) continue;
                 nextIndex = i;
                 break;
             }
-
-            if (nextIndex == -1) throw new Exception("Can't find curve samples.");
             if (nextIndex == 0) {
                 return new CurveSamplesLerpPair(samples[nextIndex], default, 0);
             }

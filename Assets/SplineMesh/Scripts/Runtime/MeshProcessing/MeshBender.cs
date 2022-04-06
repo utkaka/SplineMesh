@@ -17,6 +17,7 @@ namespace SplineMesh {
     [RequireComponent(typeof(MeshFilter))]
     [ExecuteInEditMode]
     public class MeshBender : MonoBehaviour {
+        private bool _useTangents;
         private bool isDirty;
         private bool isSourceDirty;
         private Mesh result;
@@ -41,6 +42,10 @@ namespace SplineMesh {
         private Vector2[] _uv8;
 
         private SourceMesh source;
+
+        public void SetUseTangents(bool value) {
+            _useTangents = value;
+        }
         /// <summary>
         /// The source mesh to bend.
         /// </summary>
@@ -244,6 +249,7 @@ namespace SplineMesh {
                 _triangles,
                 _vertices,
                 _normals,
+                _useTangents,
                 _uv, _uv2, _uv3, _uv4, _uv5, _uv6, _uv7, _uv8);
         }
 
@@ -344,6 +350,7 @@ namespace SplineMesh {
                 _triangles,
                 _vertices,
                 _normals,
+                _useTangents,
                 _uv, _uv2, _uv3, _uv4, _uv5, _uv6, _uv7, _uv8);
         }
 
@@ -433,6 +440,7 @@ namespace SplineMesh {
                 _triangles,
                 _vertices,
                 _normals,
+                _useTangents,
                 _uv, _uv2, _uv3, _uv4, _uv5, _uv6, _uv7, _uv8);
             
             if (TryGetComponent(out MeshCollider collider)) {

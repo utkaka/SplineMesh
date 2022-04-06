@@ -255,22 +255,23 @@ namespace SplineMesh {
         /// <param name="d"></param>
         /// <returns></returns>
         public CurveSamplesLerpPair GetSampleAtDistance(float d) {
-            if (d < 0 || d > _length)
-                throw new ArgumentException(
-                    $"Distance must be between 0 and spline length ({_length}). Given distance was {d}.");
-            foreach (var curve in _curves) {
+            for (var i = 0; i < _curves.Count; i++) {
+                var curve = _curves[i];
+                var curveLength = curve.Length;
                 // test if distance is approximately equals to curve length, because spline
                 // length may be greater than cumulated curve length due to float precision
-                if(d > curve.Length && d < curve.Length + 0.0001f) {
-                    d = curve.Length;
+                if (d > curveLength && d < curveLength + 0.0001f) {
+                    d = curveLength;
                 }
-                if (d > curve.Length) {
-                    d -= curve.Length;
+
+                if (d > curveLength) {
+                    d -= curveLength;
                 } else {
                     return curve.GetSampleAtDistance(d);
                 }
             }
-            throw new Exception("Something went wrong with GetSampleAtDistance.");
+
+            return default;
         }
     }
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace SplineMesh {
@@ -32,6 +29,8 @@ namespace SplineMesh {
         public Material material;
         public float textureScale = 1;
         public float sampleSpacing = 0.1f;
+        [SerializeField]
+        private bool _useTangents;
 
         /// <summary>
         /// Clear shape vertices, then create three vertices with three normals for the extrusion to be visible
@@ -79,6 +78,7 @@ namespace SplineMesh {
                     typeof(MeshCollider));
                 go.GetComponent<MeshRenderer>().material = material;
                 ExtrusionSegment seg = go.GetComponent<ExtrusionSegment>();
+                seg.SetUseTangents(_useTangents);
                 seg.ShapeVertices = shapeVertices;
                 seg.TextureScale = textureScale;
                 seg.TextureOffset = textureOffset;

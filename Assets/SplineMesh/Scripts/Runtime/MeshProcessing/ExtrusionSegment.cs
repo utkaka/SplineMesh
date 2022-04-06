@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace SplineMesh {
@@ -10,6 +8,7 @@ namespace SplineMesh {
     [RequireComponent(typeof(MeshFilter))]
     [RequireComponent(typeof(MeshRenderer))]
     public class ExtrusionSegment : MonoBehaviour {
+        private bool _useTangents;
         private bool isDirty;
 
         private MeshFilter mf;
@@ -31,7 +30,13 @@ namespace SplineMesh {
         private Vector2[] _uv7;
         private Vector2[] _uv8;
 
-        private List<Vertex> shapeVertices = new List<Vertex>();
+        private List<Vertex> shapeVertices;
+        
+        public void SetUseTangents(bool value) {
+            _useTangents = value;
+        }
+        
+        
         /// <summary>
         /// 
         /// </summary>
@@ -180,6 +185,7 @@ namespace SplineMesh {
         }
 
         private void Compute() {
+            if (shapeVertices == null) return;
             var path = GetPath();
 
             var vertsInShape = shapeVertices.Count;
@@ -229,6 +235,7 @@ namespace SplineMesh {
                 _triangles,
                 _vertices,
                 _normals,
+                _useTangents,
                 _uv, _uv2, _uv3, _uv4, _uv5, _uv6, _uv7, _uv8);
             var mc = GetComponent<MeshCollider>();
             if(mc != null) {

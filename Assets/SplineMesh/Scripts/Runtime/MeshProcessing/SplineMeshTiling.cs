@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 #if UNITY_EDITOR
 
@@ -46,6 +44,8 @@ namespace SplineMesh {
 
         [Tooltip("The mode to use to fill the choosen interval with the bent mesh.")]
         public MeshBender.FillingMode mode = MeshBender.FillingMode.StretchToInterval;
+        [SerializeField]
+        private bool _useTangents;
 
         private void OnEnable() {
             // tip : if you name all generated content in the same way, you can easily find all of it
@@ -122,6 +122,7 @@ namespace SplineMesh {
             res.GetComponent<MeshRenderer>().material = material;
             res.GetComponent<MeshCollider>().material = physicMaterial;
             MeshBender mb = res.GetComponent<MeshBender>();
+            mb.SetUseTangents(_useTangents);
             mb.Source = new SourceMesh(mesh, translation, Quaternion.Euler(rotation), scale);
             mb.Mode = mode;
             return res;

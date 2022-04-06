@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using UnityEngine;
 
 namespace SplineMesh {
@@ -44,6 +41,7 @@ namespace SplineMesh {
 	        int[] triangles,
             Vector3[] vertices,
             Vector3[] normals,
+            bool useTangents,
             Vector2[] uv,
             Vector2[] uv2,
             Vector2[] uv3,
@@ -68,7 +66,7 @@ namespace SplineMesh {
             mesh.uv8 = uv8;
             mesh.triangles = triangles;
             mesh.RecalculateBounds();
-            mesh.RecalculateTangents();
+            if (useTangents) mesh.RecalculateTangents();
         }
     }
 }

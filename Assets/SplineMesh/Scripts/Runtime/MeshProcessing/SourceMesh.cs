@@ -1,8 +1,6 @@
 ﻿using UnityEngine;
-using UnityEditor;
 using System.Collections.Generic;
 using System;
-using Unity.Mathematics;
 
 namespace SplineMesh {
     /// <summary>
