@@ -414,6 +414,7 @@ MonoBehaviour:
   scale: {x: 0.3, y: 0.3, z: 0.3}
   startScale: 0.5
   DurationInSecond: 10
+  _useTangents: 0
 --- !u!1 &6892248170617477666
 GameObject:
   m_ObjectHideFlags: 0
@@ -698,6 +699,7 @@ MonoBehaviour:
   scale: {x: 0.3, y: 0.3, z: 0.3}
   startScale: 0.5
   DurationInSecond: 10
+  _useTangents: 0
 --- !u!1 &8480472211210949856
 GameObject:
   m_ObjectHideFlags: 0
@@ -1128,6 +1130,7 @@ MonoBehaviour:
   scale: {x: 0.3, y: 0.3, z: 0.3}
   startScale: 0.3
   DurationInSecond: 10
+  _useTangents: 0
 --- !u!1 &8851443321915960670
 GameObject:
   m_ObjectHideFlags: 0
