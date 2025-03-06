@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2982171386451194801}
   m_Layer: 0
-  m_Name: 14 - Growing root
+  m_Name: Lowpoly root
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

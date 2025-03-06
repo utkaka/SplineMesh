@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/SplineMesh/Scripts/Tests/Assets/Performance Test Scene.unity
-    guid: ebb8934a70cdb42dda4840d21c6be4ca
+    path: Assets/Empty scene.unity
+    guid: e0e267be776104f4490294edca615caa
   m_configObjects: {}
