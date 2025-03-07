@@ -14,7 +14,6 @@ namespace SplineMesh {
     /// 
     /// This component is only for demo purpose and is not intended to be used as-is.
     /// </summary>
-    [ExecuteInEditMode]
     [RequireComponent(typeof(Spline))]
     public class ExampleGrowingRoot : MonoBehaviour {
         private GameObject generated;
@@ -34,29 +33,12 @@ namespace SplineMesh {
         [SerializeField]
         private bool _useTangents;
 
-        private void OnEnable() {
+        private void Start() {
             rate = 0;
-            Init();
-#if UNITY_EDITOR
-            EditorApplication.update += EditorUpdate;
-#endif
-        }
-
-        void OnDisable() {
-#if UNITY_EDITOR
-            EditorApplication.update -= EditorUpdate;
-#endif
-        }
-
-        private void OnValidate() {
             Init();
         }
 
         private void Update() {
-            EditorUpdate();
-        }
-
-        void EditorUpdate() {
             rate += Time.deltaTime / DurationInSecond;
             if (rate > 1) {
                 rate --;
@@ -95,9 +77,7 @@ namespace SplineMesh {
 
             meshBender = generated.GetComponent<MeshBender>();
             spline = GetComponent<Spline>();
-            meshBender.SetUseTangents(_useTangents);
-            meshBender.Source = new SourceMesh(mesh, default, Quaternion.Euler(rotation), scale);
-            meshBender.Mode = MeshBender.FillingMode.StretchToInterval;
+            meshBender.SetSource(new SourceMesh(mesh, default, Quaternion.Euler(rotation), scale));
             meshBender.SetInterval(spline, 0, 0.01f);
         }
     }

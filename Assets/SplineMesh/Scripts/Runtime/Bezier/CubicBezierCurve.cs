@@ -74,15 +74,8 @@ namespace SplineMesh {
     /// Note that a time of 0.5 and half the total distance won't necessarily define the same curve point as the curve curvature is not linear.
     /// </summary>
     [Serializable]
-    public class CubicBezierCurve {
+    public class CubicBezierCurve  : IDisposable{
         public const int STEP_COUNT = 30;
-
-        private CurveSample[] samples;
-        
-        /// <summary>
-        /// Event raised when the curve changes.
-        /// </summary>
-        public event Action Changed;
 
         [FormerlySerializedAs("n1")]
         [SerializeField]
@@ -90,14 +83,16 @@ namespace SplineMesh {
         [FormerlySerializedAs("n2")]
         [SerializeField]
         private SplineNode _node2;
+        
+        private NativeArray<CurveSample> _samples;
+        private NativeArray<float> _length;
 
         private bool _isDirty;
-        private float _length;
 
         /// <summary>
         /// Length of the curve in world unit.
         /// </summary>
-        public float Length => _length;
+        public float Length => _length[0];
 
         /// <summary>
         /// Build a new cubic Bézier curve between two given spline node.
@@ -108,6 +103,13 @@ namespace SplineMesh {
             _node1 = node1;
             _node2 = node2;
             _isDirty = true;
+            _samples = new NativeArray<CurveSample>(STEP_COUNT + 1, Allocator.Persistent);
+            _length = new NativeArray<float>(1, Allocator.Persistent);
+        }
+        
+        public void Dispose() {
+            _samples.Dispose();
+            _length.Dispose();
         }
 
         /// <summary>
@@ -132,41 +134,20 @@ namespace SplineMesh {
             _isDirty = true;
         }
 
-        public void ComputeSamples() {
-            if (!_isDirty) return;
-            samples ??= new CurveSample[STEP_COUNT + 1];
-            
-            var jobCurveSamples = new NativeArray<CurveSample>(STEP_COUNT + 1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        public JobHandle ComputeSamples(JobHandle jobHandle) {
+            if (!_isDirty) return jobHandle;
             var job = new ComputeSamplesJob {
                 Node1 = _node1,
                 Node2 = _node2,
-                Samples = jobCurveSamples,
+                Samples = _samples,
             };
-            var jobHandle = job.Schedule(STEP_COUNT + 1, 4, default);
-            
-            var jobLength = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-
+            jobHandle = job.Schedule(STEP_COUNT + 1, 4, jobHandle);
             var computeCurveLengthJob = new ComputeCurveLengthJob {
-                Samples = jobCurveSamples,
-                Length = jobLength
+                Samples = _samples,
+                Length = _length
             };
-            
-            computeCurveLengthJob.Schedule(jobHandle).Complete();
-                
-            _length = jobLength[0];
-            jobCurveSamples.CopyTo(samples);
-            jobCurveSamples.Dispose();
-            jobLength.Dispose();
-
-            /*Length = 0;
-            for (var i = 0; i <= STEP_COUNT; i++) {
-                if (i > 0) Length += Vector3.Distance(samples[i - 1].Location, samples[i].Location);
-                samples[i].DistanceInCurve = Length;
-            }*/
-
             _isDirty = false;
-            
-            Changed?.Invoke();
+            return computeCurveLengthJob.Schedule(jobHandle);
         }
 
         /// <summary>
@@ -176,11 +157,11 @@ namespace SplineMesh {
         /// <returns></returns>
         public CurveSamplesLerpPair GetSample(float time) {
             AssertTimeInBounds(time);
-            var previous = samples[0];
+            var previous = _samples[0];
             var next = default(CurveSample);
             var found = false;
 
-            foreach (var cp in samples) {
+            foreach (var cp in _samples) {
                 if (cp.TimeInCurve >= time) {
                     next = cp;
                     found = true;
@@ -201,17 +182,17 @@ namespace SplineMesh {
         /// <returns></returns>
         public CurveSamplesLerpPair GetSampleAtDistance(float d) {
             var nextIndex = -1;
-            var samplesCount = samples.Length;
+            var samplesCount = _samples.Length;
             for (var i = 0; i < samplesCount; i++) {
-                if (samples[i].DistanceInCurve < d) continue;
+                if (_samples[i].DistanceInCurve < d) continue;
                 nextIndex = i;
                 break;
             }
             if (nextIndex == 0) {
-                return new CurveSamplesLerpPair(samples[nextIndex], default, 0);
+                return new CurveSamplesLerpPair(_samples[nextIndex], default, 0);
             }
-            var next = samples[nextIndex];
-            var previous = samples[nextIndex - 1];
+            var next = _samples[nextIndex];
+            var previous = _samples[nextIndex - 1];
             var t = (d - previous.DistanceInCurve) / (next.DistanceInCurve - previous.DistanceInCurve);
             return new CurveSamplesLerpPair(previous, next, t);
         }
@@ -224,7 +205,7 @@ namespace SplineMesh {
             var minSqrDistance = float.PositiveInfinity;
             var closestIndex = -1;
             var i = 0;
-            foreach (var sample in samples) {
+            foreach (var sample in _samples) {
                 var sqrDistance = ((Vector3)sample.Location - pointToProject).sqrMagnitude;
                 if (sqrDistance < minSqrDistance) {
                     minSqrDistance = sqrDistance;
@@ -234,20 +215,20 @@ namespace SplineMesh {
             }
             CurveSample previous, next;
             if(closestIndex == 0) {
-                previous = samples[closestIndex];
-                next = samples[closestIndex + 1];
-            } else if(closestIndex == samples.Length - 1) {
-                previous = samples[closestIndex - 1];
-                next = samples[closestIndex];
+                previous = _samples[closestIndex];
+                next = _samples[closestIndex + 1];
+            } else if(closestIndex == _samples.Length - 1) {
+                previous = _samples[closestIndex - 1];
+                next = _samples[closestIndex];
             } else {
-                var toPreviousSample = (pointToProject - (Vector3)samples[closestIndex - 1].Location).sqrMagnitude;
-                var toNextSample = (pointToProject - (Vector3)samples[closestIndex + 1].Location).sqrMagnitude;
+                var toPreviousSample = (pointToProject - (Vector3)_samples[closestIndex - 1].Location).sqrMagnitude;
+                var toNextSample = (pointToProject - (Vector3)_samples[closestIndex + 1].Location).sqrMagnitude;
                 if (toPreviousSample < toNextSample) {
-                    previous = samples[closestIndex - 1];
-                    next = samples[closestIndex];
+                    previous = _samples[closestIndex - 1];
+                    next = _samples[closestIndex];
                 } else {
-                    previous = samples[closestIndex];
-                    next = samples[closestIndex + 1];
+                    previous = _samples[closestIndex];
+                    next = _samples[closestIndex + 1];
                 }
             }
 
